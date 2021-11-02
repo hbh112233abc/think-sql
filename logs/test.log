@@ -1,0 +1,40 @@
+2021-10-25 13:58:00.980 | INFO     | think_orm.util:get_logger:45 - -->System:Windows-10-10.0.19041-SP0-->
+2021-10-25 13:58:00.983 | INFO     | think_orm.util:get_logger:46 - -->Python:3.7.3 (v3.7.3:ef4ec6ed12, Mar 25 2019, 22:22:05) [MSC v.1916 64 bit (AMD64)]-->
+2021-10-25 13:58:00.985 | INFO     | think_orm.util:get_logger:47 - log_path: D:\py\think-orm\logs [INFO]
+2021-10-25 13:58:00.995 | ERROR    | think_orm.table:query:136 - SELECT * FROM sys_arae  WHERE id = %s limit %s
+2021-10-25 13:58:00.998 | ERROR    | think_orm.table:query:137 - ('100001', 1)
+2021-10-25 13:58:00.999 | ERROR    | think_orm.database:__exit__:95 - (1146, "Table 'test.sys_arae' doesn't exist")
+2021-10-25 13:58:17.273 | INFO     | think_orm.util:get_logger:45 - -->System:Windows-10-10.0.19041-SP0-->
+2021-10-25 13:58:17.277 | INFO     | think_orm.util:get_logger:46 - -->Python:3.7.3 (v3.7.3:ef4ec6ed12, Mar 25 2019, 22:22:05) [MSC v.1916 64 bit (AMD64)]-->
+2021-10-25 13:58:17.279 | INFO     | think_orm.util:get_logger:47 - log_path: D:\py\think-orm\logs [INFO]
+2021-10-25 13:58:17.286 | ERROR    | think_orm.table:query:136 - SELECT * FROM sys_area  WHERE id = %s limit %s
+2021-10-25 13:58:17.288 | ERROR    | think_orm.table:query:137 - ('100001', 1)
+2021-10-25 13:58:53.189 | INFO     | think_orm.util:get_logger:45 - -->System:Windows-10-10.0.19041-SP0-->
+2021-10-25 13:58:53.191 | INFO     | think_orm.util:get_logger:46 - -->Python:3.7.3 (v3.7.3:ef4ec6ed12, Mar 25 2019, 22:22:05) [MSC v.1916 64 bit (AMD64)]-->
+2021-10-25 13:58:53.192 | INFO     | think_orm.util:get_logger:47 - log_path: D:\py\think-orm\logs [INFO]
+2021-10-25 14:01:44.941 | ERROR    | think_orm.table:query:136 - SELECT * FROM sys_area  WHERE id = %s limit %s
+2021-10-25 14:01:44.942 | ERROR    | think_orm.table:query:137 - ('100001', 1)
+2021-10-25 14:01:54.789 | INFO     | think_orm.util:get_logger:45 - -->System:Windows-10-10.0.19041-SP0-->
+2021-10-25 14:01:54.791 | INFO     | think_orm.util:get_logger:46 - -->Python:3.7.3 (v3.7.3:ef4ec6ed12, Mar 25 2019, 22:22:05) [MSC v.1916 64 bit (AMD64)]-->
+2021-10-25 14:01:54.793 | INFO     | think_orm.util:get_logger:47 - log_path: D:\py\think-orm\logs [INFO]
+2021-10-25 14:01:54.800 | ERROR    | think_orm.table:query:136 - SELECT * FROM sys_area  WHERE id = %s limit %s
+2021-10-25 14:01:54.802 | ERROR    | think_orm.table:query:137 - ('100001', 1)
+2021-10-25 14:01:54.804 | INFO     | think_orm.database:__exit__:94 - [sql](test) SELECT * FROM sys_area  WHERE id = '100001' limit 1
+2021-10-25 14:01:54.805 | ERROR    | think_orm.database:__exit__:95 - 'Connection' object has no attribute 'database'
+2021-10-25 14:02:51.095 | INFO     | think_orm.util:get_logger:45 - -->System:Windows-10-10.0.19041-SP0-->
+2021-10-25 14:02:51.099 | INFO     | think_orm.util:get_logger:46 - -->Python:3.7.3 (v3.7.3:ef4ec6ed12, Mar 25 2019, 22:22:05) [MSC v.1916 64 bit (AMD64)]-->
+2021-10-25 14:02:51.102 | INFO     | think_orm.util:get_logger:47 - log_path: D:\py\think-orm\logs [INFO]
+2021-10-25 14:05:35.628 | ERROR    | think_orm.table:query:133 - SELECT * FROM sys_area  WHERE id = %s limit %s
+2021-10-25 14:05:35.631 | ERROR    | think_orm.table:query:133 - ('100001', 1)
+2021-10-25 14:05:35.632 | INFO     | think_orm.database:__exit__:94 - [sql](test) SELECT * FROM sys_area  WHERE id = '100001' limit 1
+2021-10-25 14:05:35.634 | ERROR    | think_orm.database:__exit__:95 - 
+2021-10-25 14:05:37.979 | INFO     | think_orm.util:get_logger:45 - -->System:Windows-10-10.0.19041-SP0-->
+2021-10-25 14:05:37.981 | INFO     | think_orm.util:get_logger:46 - -->Python:3.7.3 (v3.7.3:ef4ec6ed12, Mar 25 2019, 22:22:05) [MSC v.1916 64 bit (AMD64)]-->
+2021-10-25 14:05:37.984 | INFO     | think_orm.util:get_logger:47 - log_path: D:\py\think-orm\logs [INFO]
+2021-10-25 14:05:39.380 | INFO     | think_orm.table:log_sql:169 - [sql](b'test') SELECT * FROM sys_area  WHERE id = '100001' limit 1
+2021-10-25 14:13:50.678 | INFO     | think_orm.util:get_logger:45 - -->System:Windows-10-10.0.19041-SP0-->
+2021-10-25 14:13:50.680 | INFO     | think_orm.util:get_logger:46 - -->Python:3.7.3 (v3.7.3:ef4ec6ed12, Mar 25 2019, 22:22:05) [MSC v.1916 64 bit (AMD64)]-->
+2021-10-25 14:13:50.684 | INFO     | think_orm.util:get_logger:47 - log_path: D:\py\think-orm\logs [INFO]
+2021-10-25 14:13:50.703 | INFO     | think_orm.table:log_sql:150 - [sql](b'test') SELECT * FROM sys_area  WHERE id = '100001' limit 1
+2021-10-25 14:19:52.333 | INFO     | think_orm.database:__exit__:94 - [sql](test) SELECT * FROM sys_area  WHERE id = '100001' limit 1
+2021-10-25 14:19:52.335 | ERROR    | think_orm.database:__exit__:95 - 
