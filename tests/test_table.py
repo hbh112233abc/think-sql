@@ -27,7 +27,7 @@ class TestTable:
 
     def test_set_cache_storage(self):
         table = self.db.table('sys_area')
-        assert isinstance(table.cache_storage, cacheout.Cacheout)
+        assert isinstance(table.cache_storage, cacheout.Cache)
         storage = Redis('192.168.102.154', 6379, 0, 'Efileredis0516')
         table.set_cache_storage(storage)
         assert isinstance(table.cache_storage, Redis)
@@ -41,7 +41,7 @@ class TestTable:
         table.where('pid', 100001).find()
         sql = table.get_last_sql()
         assert isinstance(sql, str)
-        assert sql == "SELECT * FROM sys_area WHERE pid = '100001'"
+        assert sql == "SELECT * FROM sys_area  WHERE pid = '100001' LIMIT 1"
 
     def test_find(self):
         data_id = 100001
@@ -59,7 +59,7 @@ class TestTable:
         res = self.db.table('sys_area').where(
             'id', 100001).fetch_sql(True).find()
         assert isinstance(res, str)
-        assert res == "SELECT * FROM sys_area  WHERE id = '100001' limit 1"
+        assert res == "SELECT * FROM sys_area  WHERE id = '100001' LIMIT 1"
 
     def test_cache(self):
         a = self.db.table('sys_area').cache().where('id', 100001).find()
@@ -82,8 +82,7 @@ class TestTable:
             self.db.table('sys_area').where(
                 [['id', '=', 100001, 100002]]).find()
         with pytest.raises(ValueError):
-            self.db.table('sys_area').where(
-                [['id=1']]).find()
+            self.db.table('sys_area').where([['id=1']]).find()
 
         with pytest.raises(ValueError):
             self.db.table('sys_area').where(11).find()
@@ -204,7 +203,7 @@ class TestTable:
             'pid', 100001).column('code', 'id')
         assert isinstance(res, dict)
         assert len(res.keys()) == 16
-        assert res[100002] == '110101'
+        assert res[100002]['code'] == '110101'
 
         res = self.db.table('sys_area').where(
             'pid', 100001).column('code,name', 'id')
@@ -238,9 +237,10 @@ class TestTable:
 
         table = self.db.table('sys_area').alias('province').join(
             'sys_area', 'city', 'province.id = city.pid', 'left', 'city.id>=100102')
-        res = table.where('province.id', '100001').select()
         assert isinstance(table.join_list, list)
         assert table.join_list[0] == 'LEFT JOIN sys_area AS city ON province.id = city.pid AND city.id>=100102'
+
+        res = table.where('province.id', '100001').select()
         assert isinstance(res, list)
 
         with pytest.raises(ValueError):
@@ -397,3 +397,13 @@ class TestTable:
         assert res == True
         res = self.db.table('sys_area').where('id', 1).exists()
         assert res == False
+
+    def test_batch_update(self):
+        data = []
+        for i in range(101, 200):
+            data.append({'id': i, 'status': 0})
+        res = self.db.table('user').batch_update(data, key='id')
+        assert isinstance(res, int)
+        assert res == 99
+        self.db.table('user').batch_update(
+            [{'id': i, 'status': 1} for i in range(101, 200)], key='id')

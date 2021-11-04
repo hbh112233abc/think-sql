@@ -32,7 +32,15 @@ config = {
 
 
 class DB():
-    def __init__(self, database='test', host='127.0.0.1', username='root', password='root', port=3306, params={}):
+    def __init__(
+        self,
+        database='test',
+        host='127.0.0.1',
+        username='root',
+        password='root',
+        port=3306,
+        params={}
+    ):
         """实例化数据库连接
 
         Args:
@@ -54,7 +62,7 @@ class DB():
         self.cursor = self.conn.cursor(pymysql.cursors.SSDictCursor)
 
     def __repr__(self):
-        return f"<class 'database.DB' database={self.database}>"
+        return f"<class 'think_sql.database.DB' database={self.database}>"
 
     def connect(self):
         """连接数据库

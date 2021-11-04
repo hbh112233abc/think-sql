@@ -6,7 +6,7 @@ import re
 from hashlib import md5
 import itertools
 import cacheout
-from typing import Any, Union, Tuple
+from typing import Any, Union, Tuple, List
 from decimal import Decimal
 
 from pymysql.cursors import Cursor
@@ -17,11 +17,18 @@ from .cache import CacheStorage
 
 
 class Table():
-    def __init__(self, connector: Connection, cursor: Cursor, table_name: str, debug: bool = True):
+    def __init__(
+        self,
+        connector: Connection,
+        cursor: Cursor,
+        table_name: str,
+        debug: bool = True
+    ):
         self.connector = connector
         self.db_cursor = cursor
         self.table_name = table_name
         self.__debug = debug
+        self.__fetch_sql = False
         self.log = get_logger()
         self.cache_storage = cacheout.Cache()
         self.init()
@@ -36,13 +43,14 @@ class Table():
         self.group_by = ''
         self.select_fields = ('*',)
         self.join_list = []
-        self._fetch_sql = False
+        # self.__fetch_sql = False
         # 缓存相关设置
         self.use_cache = False
         self.cache_key = None
         self.cache_expire = 3600
+        return self
 
-    def debug(self, flag=True):
+    def debug(self, flag: bool = True):
         """设置调试模式
 
         Args:
@@ -78,7 +86,7 @@ class Table():
         self.cache_expire = expire
         return self
 
-    def cursor(self, sql: str, params: list = []) -> Cursor:
+    def cursor(self) -> Cursor:
         """查询操作,返回cursor对象
 
         Args:
@@ -88,6 +96,17 @@ class Table():
         Returns:
             cursor: 游标
         """
+        sql = 'SELECT {select_fields} FROM {table} {join} WHERE {where}{group}{order}{limit}'.format(
+            select_fields=','.join(self.select_fields),
+            table=self.table_name,
+            join=' '.join(self.join_list),
+            where=self.__condition_str_fix(),
+            group=self.group_by,
+            order=self.order_by,
+            limit=self.limit_dict.get('sql', '')
+        )
+        params = self.condition_val + self.limit_dict.get('params', ())
+
         self.db_cursor.execute(sql, params)
         return self.db_cursor
 
@@ -107,11 +126,11 @@ class Table():
         '''获取最后执行的sql'''
         return self.db_cursor._last_executed
 
-    def get_lastid(self):
+    def get_lastid(self) -> str:
         '''获取最后作用的id'''
         return self.db_cursor.lastrowid
 
-    def get_rowcount(self):
+    def get_rowcount(self) -> int:
         '''获取sql影响条数'''
         return self.db_cursor.rowcount
 
@@ -121,7 +140,7 @@ class Table():
         Args:
             flag (bool, optional): 是否输出sql. Defaults to True.
         """
-        self._fetch_sql = flag
+        self.__fetch_sql = flag
         return self
 
     def build_sql(self, operation: str, params: list = []) -> str:
@@ -136,7 +155,7 @@ class Table():
         """
         return self.db_cursor.mogrify(operation, params)
 
-    def condition_str_fix(self) -> str:
+    def __condition_str_fix(self) -> str:
         """清理查询条件前缀
 
         Returns:
@@ -157,7 +176,7 @@ class Table():
             tuple: 查询结果
         """
         try:
-            if self._fetch_sql:
+            if self.__fetch_sql:
                 return self.build_sql(sql, params)
 
             # 缓存操作
@@ -178,12 +197,12 @@ class Table():
                         result,
                         self.cache_expire
                     )
-                    self.log_sql()
+                    self.__log_sql()
                     return result
 
             self.db_cursor.execute(sql, params)
             result = self.db_cursor.fetchall()
-            self.log_sql()
+            self.__log_sql()
             return result
         except Exception as e:
             self.log.error(sql)
@@ -203,13 +222,13 @@ class Table():
             int: 影响行数
         """
         try:
-            if self._fetch_sql:
+            if self.__fetch_sql:
                 return self.build_sql(sql, params)
 
             self.db_cursor.execute(sql, params)
             self.connector.commit()
             result = self.db_cursor.rowcount
-            self.log_sql()
+            self.__log_sql()
             return result
         except Exception as e:
             self.log.error(self.build_sql(sql, params))
@@ -217,7 +236,7 @@ class Table():
         finally:
             self.init()
 
-    def log_sql(self):
+    def __log_sql(self):
         """记录sql日志
         """
         if self.__debug:
@@ -226,7 +245,7 @@ class Table():
             )
 
     @staticmethod
-    def parse_where(field: str, symbol: str, value: Any = None) -> Tuple[str, tuple]:
+    def parse_where(field: str, symbol: str = '', value: Any = None) -> Tuple[str, tuple]:
         """解析where条件语句
 
         Args:
@@ -305,6 +324,9 @@ class Table():
             field = f'{field} {value}'
             symbol = ''
             check_value = False
+        elif symbol == '' and value is None:
+            # field 原生sql
+            pass
         else:
             if value is None:
                 value = symbol
@@ -348,7 +370,7 @@ class Table():
             self.condition_val += condition_val
         elif isinstance(field, list):
             for condition in field:
-                if isinstance(condition, (list, tuple)) and len(condition) <= 3:
+                if isinstance(condition, (list, tuple)) and len(condition) == 3:
                     self.where(*condition)
                 else:
                     raise ValueError(
@@ -405,12 +427,12 @@ class Table():
         """
         if step is None:
             self.limit_dict = {
-                'sql': ' limit %s',
+                'sql': ' LIMIT %s',
                 'params': (start,)
             }
         else:
             self.limit_dict = {
-                'sql': ' limit %s,%s',
+                'sql': ' LIMIT %s,%s',
                 'params': (start, step)
             }
         return self
@@ -501,7 +523,7 @@ class Table():
             select_fields=','.join(self.select_fields),
             table=self.table_name,
             join=' '.join(self.join_list),
-            where=self.condition_str_fix(),
+            where=self.__condition_str_fix(),
             group=self.group_by,
             order=self.order_by,
             limit=self.limit_dict.get('sql', '')
@@ -522,7 +544,7 @@ class Table():
         """
         self.limit(1)
         result = self.select()
-        if self._fetch_sql:
+        if self.__fetch_sql:
             return result
         return result[0] if len(result) > 0 else {}
 
@@ -539,7 +561,7 @@ class Table():
         result = self.find()
         return result.get(field, '')
 
-    def column(self, fields: str, key: str = '') -> list:
+    def column(self, fields: str, key: str = '') -> Union[list, dict]:
         """按列取数据
 
         Args:
@@ -561,7 +583,7 @@ class Table():
                 return [x[fields[0]] for x in result]
             return result
         # 包含键名
-        if len(fields) == 2:
+        if len(fields) == 1:
             return {x[key]: x[fields[0]] for x in result}
         else:
             return {x[key]: x for x in result}
@@ -680,7 +702,7 @@ class Table():
         sql = 'UPDATE {table} SET {inputs} WHERE {where};'.format(
             table=self.table_name,
             inputs=inputs,
-            where=self.condition_str_fix()
+            where=self.__condition_str_fix()
         )
         result = self.execute(sql, params)
         return result
@@ -701,7 +723,7 @@ class Table():
             raise ValueError('please set `where` conditions!')
         sql = 'DELETE FROM {table} WHERE {where};'.format(
             table=self.table_name,
-            where=self.condition_str_fix()
+            where=self.__condition_str_fix()
         )
         result = self.execute(sql, self.condition_val)
         return result
@@ -758,7 +780,7 @@ class Table():
             field=field,
             symbol=symbol,
             step=step,
-            where=self.condition_str_fix(),
+            where=self.__condition_str_fix(),
         )
         result = self.execute(sql, self.condition_val)
         return result
@@ -788,11 +810,11 @@ class Table():
         sql = 'SELECT MAX({field}) AS max FROM `{table}` WHERE {where} LIMIT 1'.format(
             table=self.table_name,
             field=field,
-            where=self.condition_str_fix(),
+            where=self.__condition_str_fix(),
         )
         result = self.query(sql, self.condition_val)
 
-        if self._fetch_sql:
+        if self.__fetch_sql:
             return result
 
         if not result:
@@ -819,11 +841,11 @@ class Table():
         sql = 'SELECT SUM(`{field}`) AS sum FROM `{table}` WHERE {where} LIMIT 1'.format(
             table=self.table_name,
             field=field,
-            where=self.condition_str_fix(),
+            where=self.__condition_str_fix(),
         )
         result = self.query(sql, self.condition_val)
 
-        if self._fetch_sql:
+        if self.__fetch_sql:
             return result
 
         if not result:
@@ -850,11 +872,11 @@ class Table():
         sql = 'SELECT AVG(`{field}`) AS avg FROM `{table}` WHERE {where} LIMIT 1'.format(
             table=self.table_name,
             field=field,
-            where=self.condition_str_fix(),
+            where=self.__condition_str_fix(),
         )
         result = self.query(sql, self.condition_val)
 
-        if self._fetch_sql:
+        if self.__fetch_sql:
             return result
 
         if not result:
@@ -869,7 +891,7 @@ class Table():
 
         return Table.to_number(avg_value)
 
-    def count(self, field: str = '*') -> int:
+    def count(self, field: str = '*') -> Union[str, int]:
         """获取数据行数
 
         Args:
@@ -881,16 +903,15 @@ class Table():
         sql = 'SELECT COUNT({field}) AS count FROM `{table}` WHERE {where} LIMIT 1'.format(
             field=field,
             table=self.table_name,
-            where=self.condition_str_fix(),
+            where=self.__condition_str_fix(),
         )
         result = self.query(sql, self.condition_val)
 
-        if self._fetch_sql:
+        if self.__fetch_sql:
             return result
 
         if not result:
             return 0
-
         return (result[0]['count'] or 0)
 
     def copy_to(self, new_table: str = None, create_blank_table: bool = False) -> int:
@@ -912,7 +933,7 @@ class Table():
         if create_blank_table:
             sql += ' WHERE 1=0'
         else:
-            sql += f' WHERE {self.condition_str_fix()}'
+            sql += f' WHERE {self.__condition_str_fix()}'
         return self.execute(sql, self.condition_val)
 
     def insert_to(self, new_table: str, fields: Union[str, list, tuple] = None) -> int:
@@ -939,7 +960,7 @@ class Table():
             select_fields=','.join(self.select_fields),
             table=self.table_name,
             join=' '.join(self.join_list),
-            where=self.condition_str_fix(),
+            where=self.__condition_str_fix(),
             group=self.group_by,
             order=self.order_by,
             limit=self.limit_dict.get('sql', '')
@@ -952,13 +973,47 @@ class Table():
         return self.execute(sql, params)
 
     def exists(self) -> bool:
+        """判断是否存在数据
+
+        Returns:
+            bool: 判断当前查询条件下是否存在数据
+        """
         sql = 'SELECT 1 FROM {table} {join} WHERE {where} LIMIT 1'.format(
             table=self.table_name,
             join=' '.join(self.join_list),
-            where=self.condition_str_fix()
+            where=self.__condition_str_fix()
         )
         result = self.query(sql, self.condition_val)
 
         if not result:
             return False
         return True
+
+    def batch_update(self, data: List[dict], key: str) -> int:
+        """批量更新
+
+        Args:
+            data (List[dict]): 数据列表List[dict]
+            key (str): data中存在的键名,一般是主键
+
+        Raises:
+            ValueError: key不存在时报错
+
+        Return:
+            int: 更新行数
+        """
+        sql = []
+        for row in data:
+            if key not in row:
+                raise ValueError(f'key:{key} not in data item')
+            self.init()
+            sql.append(
+                self.where(key, row[key]).fetch_sql().update(row)
+            )
+        result = 0
+        for x in range(0, len(sql), 100):
+            for s in sql[x:x + 100]:
+                self.db_cursor.execute(s)
+                result += self.get_rowcount()
+            self.connector.commit()
+        return result

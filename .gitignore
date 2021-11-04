@@ -3,3 +3,8 @@ htmlcov/
 .pytest_cache/
 .coverage
 poetry.lock
+dist/
+tests/__pycache__/
+think_sql/__pycache__/
+logs/
+tests/logs/
