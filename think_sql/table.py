@@ -650,11 +650,11 @@ class Table():
         self.table_name = f'({sql1} {symbol} {sql2}) AS t'
         return self
 
-    def insert(self, data: Union[dict, list], replace: bool = False) -> int:
+    def insert(self, data: Union[dict, List[dict]], replace: bool = False) -> int:
         """插入数据
 
         Args:
-            data (dict|list): 待新增的数据
+            data (dict|List[dict]): 待新增的数据
             replace (bool): 是否使用replace
 
         Returns:
@@ -944,7 +944,7 @@ class Table():
             fields (str, optional): 字段名. Defaults to None.
 
         Returns:
-            int: [description]
+            int: affect rows count
         """
         sql = f'INSERT INTO {new_table}'
         if fields is not None:

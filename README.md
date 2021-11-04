@@ -1,11 +1,11 @@
 # ThinkSQL 类似ThinkPHP的数据库引擎
 
-## 安装
+## Install
 ```
 pip install think-sql
 ```
 
-## 使用
+## How to use
 
 ### 1. simple demo
 
@@ -36,7 +36,7 @@ result
 }
 ```
 
-### 2. documention
+### 2. Introduction
 
 #### think_sql.database.DB
 
@@ -233,40 +233,132 @@ result
         LIMIT 1
     ```
 - union(sql1: str, sql2: str, union_all: bool = False)
+    union sql1 and sql2
+    - union_all if union_all is True then `UNION ALL`
 
-- insert(self, data: Union[dict, list], replace: bool = False) -> int
+    *demo*
+    ```
+    sql1 = db.table('table1').field('name,score').where('status',1).select(build_sql=True)
+    sql2 = db.table('table2').field('name,score').where('status',1).select(build_sql=True)
 
-- update(self, data: dict, all_record: bool = False) -> int
+    result = db.table().union(sql1,sql2).where('score','>',60).select()
+    ```
+    *sql*
+    ```
+    SELECT
+	*
+    FROM
+        ( SELECT `name`, `score` FROM table1 WHERE `status` = 1 )
+        UNION
+        ( SELECT `name`, `score` FROM table2 WHERE `status` = 1 )
+    WHERE
+        score > 60
+    ```
 
-- delete(self, all_record: bool = False) -> int
+- insert(data: Union[dict, List[dict]], replace: bool = False) -> int
+    insert data to database
+    - `data` dict: insert one record; list: insert multiple records
+    - `replace` bool if `replace` is True then use `REPLACE INTO`
 
-- inc(self, field: str, step: Union[str, int, float] = 1) -> int
+- update(data: dict, all_record: bool = False) -> int
+    update data
+    - `data` dict you want update data
+    - `all_record` bool if `all_record` is False then you must set update condition; if you want to update all records then you need set `all_record` = True
 
-- dec(self, field: str, step: int = 1) -> int
+- delete(all_record: bool = False) -> int
+    delete record
+    - `all_record` bool if `all_record` is False then you must set delete condition; if you want to delete all records then you need set `all_record` = True
 
-- max(self, field: str) -> Union[int, float]
+- inc(field: str, step: Union[str, int, float] = 1) -> int
 
-- sum(self, field: str) -> Union[int, float, Decimal]
+    increase `field` +`step`
 
-- avg(self, field: str) -> Union[int, float, Decimal]
+- dec(field: str, step: int = 1) -> int
 
-- count(self, field: str = '*') -> int
+    decrease `field` -`step`
 
-- copy_to(self, new_table: str = None, create_blank_table: bool = False) -> int
+- max(field: str) -> Union[int, float]
 
-- insert_to(self, new_table: str, fields: Union[str, list, tuple] = None) -> int
+    get the max value of `field`
+
+- sum(field: str) -> Union[int, float, Decimal]
+
+    get the sum value of `field`
+
+- avg(field: str) -> Union[int, float, Decimal]
+
+    get the avg value of `field`
+
+- count(field: str = '*') -> int
+
+    get the count of records
+
+- copy_to(new_table: str = None, create_blank_table: bool = False) -> int
+
+    copy data to `new_table`
+    - `new_table` if `new_table` is None then `new_table` will auto set like `{table_name}_copy`
+    - `create_blank_table` bool if `create_blank_table` is True then only create a blank table like current table.
+
+    *demo*
+    ```
+    db.table('user').field('name,score').where('score','>',60).copy_to('good_boy')
+    ```
+
+    *sql*
+    ```
+    SELECT
+	    `name`,
+        `score`
+    INTO `good_boy`
+    FROM
+    `user`
+    WHERE
+        score > 60
+    ```
+
+
+- insert_to(new_table: str, fields: Union[str, list, tuple] = None) -> int
+
+    ```
+    INSERT INTO {new_table} SELECT {select_fields} FROM {table} {join} WHERE {where}{group}{order}{limit}
+    ```
 
 - exists(self) -> bool
 
-- batch_update(data:List[dict])
+    check record exists with some query conditions, it use `SELECT 1 FROM {table} {join} WHERE {where} LIMIT 1`
+
+- batch_update(data:List[dict],key:str) -> int
+
+    batch update multiple records
+
+    *demo*
+    ```
+    data = [
+        {'id':1,'score':66},
+        {'id':2,'score':59},
+        {'id':3,'score':86},
+        {'id':4,'score':90},
+    ]
+    db.table('user').batch(data,key='id')
+    ```
+    *sql*
+    ```
+    update `user` set score = 66 where id = 1;
+    update `user` set score = 59 where id = 2;
+    update `user` set score = 86 where id = 3;
+    update `user` set score = 90 where id = 4;
+    ```
 
 
 
-## 开发
+
+## Development
 
 ### poetry包管理器
 [官网](https://python-poetry.org/)
+
 [Python包管理之poetry的使用](https://blog.csdn.net/zhoubihui0000/article/details/104937285)
+
 [Python包管理之poetry基本使用](https://zhuanlan.zhihu.com/p/110721747)
 
 
@@ -278,7 +370,7 @@ poetry install
 # 进入虚拟环境
 poetry shell
 ```
-### poetry命令
+### poetry command
 
 |名称| 功能|
 |-|-|
@@ -293,12 +385,12 @@ poetry shell
 |publish|发布到 PyPI|
 |run|运行脚本和代码|
 
-## 单元测试
+## unit test
 ```
 pytest --cov --cov-report=html
 ```
 
-## 发布
+## publish
 ```
 poetry build
 poetry config pypi-token.pypi "your pypi.org api token"
