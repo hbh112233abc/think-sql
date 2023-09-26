@@ -1,30 +1,31 @@
+[build-system]
+requires = [ "poetry-core>=1.0.0",]
+build-backend = "poetry.core.masonry.api"
+
 [tool.poetry]
 name = "think-sql"
 version = "0.1.2"
 description = "ThinkSQL link think-orm(ThinkPHP)"
-authors = ["hbh112233abc <hbh112233abc@163.com>"]
+authors = [ "hbh112233abc <hbh112233abc@163.com>",]
 license = "MIT"
 readme = "README.md"
 homepage = "https://github.com/hbh112233abc/think-sql"
 repository = "https://github.com/hbh112233abc/think-sql"
 documentation = "https://github.com/hbh112233abc/think-sql"
-keywords = ["sql","database","table","think-orm","ThinkPHP"]
-
+keywords = [ "sql", "database", "table", "think-orm", "ThinkPHP",]
+[[tool.poetry.source]]
+name = "pypi.tuna.tsinghua.edu.cn"
+url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+default = true
 
 [tool.poetry.dependencies]
-python = "^3.6"
+python = ">=3.7,<4.0"
 cacheout = "^0.13.1"
 PyMySQL = "^1.0.2"
 jsonpath = "^0.82"
 loguru = "^0.5.3"
-pretty-errors = "^1.2.24"
 dill = "^0.3.4"
-redis = "^3.5.3"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
 pytest-cov = "^3.0.0"
-
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"

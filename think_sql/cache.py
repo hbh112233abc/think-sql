@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-__author__ = 'hbh112233abc@163.com'
+__author__ = "hbh112233abc@163.com"
 
 from functools import wraps
 import hashlib
@@ -8,7 +8,6 @@ import dill
 import abc  # 利用abc模块实现抽象类
 
 import cacheout
-import redis
 
 cache_storage = cacheout.Cache()
 
@@ -54,6 +53,7 @@ def cache(key=None, ttl=3600, storage=cache_storage):
             return a+b
         未设置key值,默认按传参md5值为key值,传参一致的将返回缓存值
     """
+
     def cache_decorator(func):
         @wraps(func)
         def wrapped_function(*args, **kwargs):
@@ -61,32 +61,29 @@ def cache(key=None, ttl=3600, storage=cache_storage):
             if not cache_key:
                 cache_key = params_to_key(func.__name__, *args, **kwargs)
             else:
-                cache_key = f'{func.__name__}_{key}'
+                cache_key = f"{func.__name__}_{key}"
 
             if storage.get(cache_key):
-                if isinstance(storage, redis.Redis):
-                    return dill.loads(eval(storage.get(cache_key)))
                 return storage.get(cache_key)
             result = func(*args, **kwargs)
             if result:
-                if isinstance(storage, redis.Redis):
-                    storage.set(cache_key, str(dill.dumps(result)), ttl)
-                else:
-                    storage.set(cache_key, result, ttl)
+                storage.set(cache_key, result, ttl)
             return result
+
         return wrapped_function
+
     return cache_decorator
 
 
 class CacheStorage(metaclass=abc.ABCMeta):
-    """缓存驱动抽象类
-    """
+    """缓存驱动抽象类"""
+
     @abc.abstractmethod  # 定义抽象方法，无需实现功能
     def get(self):
-        '子类必须定义读功能'
+        "子类必须定义读功能"
         pass
 
     @abc.abstractmethod  # 定义抽象方法，无需实现功能
     def set(self):
-        '子类必须定义写功能'
+        "子类必须定义写功能"
         pass

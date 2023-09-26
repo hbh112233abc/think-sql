@@ -1,88 +1,87 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-__author__ = 'hbh112233abc@163.com'
+__author__ = "hbh112233abc@163.com"
 
 
+from typing import List, Union
 import pymysql
 
-from .util import get_logger
-from .table import Table
-from .cache import cache
+from loguru import logger
 
-import pretty_errors
-# 【重点】进行配置
-pretty_errors.configure(
-    separator_character='*',
-    filename_display=pretty_errors.FILENAME_EXTENDED,
-    line_number_first=True,
-    display_link=True,
-    lines_before=5,
-    lines_after=2,
-    line_color=pretty_errors.RED + '> ' + pretty_errors.default_config.line_color,
-    code_color='  ' + pretty_errors.default_config.line_color,
-)
+from .util import DBConfig
+
+from .table import Table
 
 config = {
-    'database': 'test',
-    'host': '127.0.0.1',
-    'port': 3306,
-    'username': 'root',
-    'password': 'root',
+    "host": "127.0.0.1",
+    "port": 3306,
+    "username": "root",
+    "password": "root",
+    "database": "test",
 }
 
 
-class DB():
+class DB:
     def __init__(
         self,
-        database='test',
-        host='127.0.0.1',
-        username='root',
-        password='root',
-        port=3306,
-        params={}
+        config: Union[str, dict, DBConfig],
+        params={},
     ):
         """实例化数据库连接
 
         Args:
-            database (str, optional): 数据库名称. Defaults to 'test'.
-            host (str, optional): 数据库服务地址. Defaults to '127.0.0.1'.
-            port (int, optional): 数据库服务端口. Defaults to 3306.
-            username (str, optional): 用户名. Defaults to 'root'.
-            password (str, optional): 密码. Defaults to 'root'.
+            config: str|dict|DBConfig 数据库连接配置
+            params: dict 数据库连接参数
         """
-        self.database = database
-        self.host = host
-        self.port = port
-        self.username = username
-        self.password = password
+        if isinstance(config, str):
+            config = DBConfig.parse_dsn(config)
+        elif isinstance(config, dict):
+            config = DBConfig.model_validate(config)
+        if not isinstance(config, DBConfig):
+            raise ValueError("Invalid database config")
+        self.config = config
         self.params = params
 
-        self.log = get_logger()
+        self.log = logger
+        self.conn = None
+        self.cursor = None
+
         self.connect()
-        self.cursor = self.conn.cursor(pymysql.cursors.SSDictCursor)
 
     def __repr__(self):
         return f"<class 'think_sql.database.DB' database={self.database}>"
 
     def connect(self):
-        """连接数据库
-        """
+        """连接数据库"""
         self.conn = pymysql.connect(
-            host=self.host,
-            port=int(self.port),
-            user=self.username,
-            password=self.password,
-            database=self.database,
+            host=self.config.host,
+            port=int(self.config.port),
+            user=self.config.username,
+            password=self.config.password,
+            database=self.config.database,
             **self.params,
         )
+        # SSCursor (流式游标) 解决 Python 使用 pymysql 查询大量数据导致内存使用过高的问题
+        self.cursor = self.conn.cursor(pymysql.cursors.SSDictCursor)
 
-    def execute(self, sql, params=()):
-        self.cursor.execute(sql, params)
-        self.conn.commit()
+    def execute(self, sql, params=()) -> int:
+        try:
+            result = self.cursor.execute(sql.strip(), params)
+            self.connect.commit()
+            return result
+        except Exception as e:
+            logger.exception(f"Failed to execute: {e}")
+            return 0
 
-    def query(self, sql, params=()):
-        self.cursor.execute(sql, params)
-        return self.cursor.fetchall()
+    def query(self, sql, params=()) -> List[dict]:
+        result = []
+        try:
+            self.cursor.execute(sql.strip(), params)
+            if self.cursor.rowcount > 0:
+                result = self.cursor.fetchall()
+        except Exception as e:
+            self.log.exception(e)
+        return result
 
     def __enter__(self):
         return self
@@ -98,17 +97,17 @@ class DB():
         """
         if exc_value is not None:
             if self.cursor._executed:
-                self.log.info(
-                    f"[sql]({self.database}) {self.cursor._executed}")
-            self.log.error(str(exc_value))
+                self.log.info(f"[sql]({self.database}) {self.cursor._executed}")
+            self.log.exception(exc_value)
             self.conn.rollback()
         else:
             self.conn.commit()
+        if self.cursor:
+            self.cursor.close()
+        if self.conn:
+            self.conn.close()
 
-        self.cursor.close()
-        self.conn.close()
-
-    def table(self, table_name=''):
+    def table(self, table_name=""):
         """生成对应数据表
 
         Args:

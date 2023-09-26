@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-__author__ = 'hbh112233abc@163.com'
+__author__ = "hbh112233abc@163.com"
 
 import re
 from hashlib import md5
@@ -12,36 +12,32 @@ from decimal import Decimal
 from pymysql.cursors import Cursor
 from pymysql.connections import Connection
 
-from .util import get_logger
+from loguru import logger
+
 from .cache import CacheStorage
 
 
-class Table():
+class Table:
     def __init__(
-        self,
-        connector: Connection,
-        cursor: Cursor,
-        table_name: str,
-        debug: bool = True
+        self, connector: Connection, cursor: Cursor, table_name: str, debug: bool = True
     ):
         self.connector = connector
         self.db_cursor = cursor
         self.table_name = table_name
         self.__debug = debug
         self.__fetch_sql = False
-        self.log = get_logger()
+        self.log = logger
         self.cache_storage = cacheout.Cache()
         self.init()
 
     def init(self):
-        """初始化查询条件
-        """
-        self.condition_str = '1=1'
+        """初始化查询条件"""
+        self.condition_str = "1=1"
         self.condition_val = tuple()
         self.limit_dict = {}
-        self.order_by = ''
-        self.group_by = ''
-        self.select_fields = ('*',)
+        self.order_by = ""
+        self.group_by = ""
+        self.select_fields = ("*",)
         self.join_list = []
         # self.__fetch_sql = False
         # 缓存相关设置
@@ -96,16 +92,16 @@ class Table():
         Returns:
             cursor: 游标
         """
-        sql = 'SELECT {select_fields} FROM {table} {join} WHERE {where}{group}{order}{limit}'.format(
-            select_fields=','.join(self.select_fields),
+        sql = "SELECT {select_fields} FROM {table} {join} WHERE {where}{group}{order}{limit}".format(
+            select_fields=",".join(self.select_fields),
             table=self.table_name,
-            join=' '.join(self.join_list),
+            join=" ".join(self.join_list),
             where=self.__condition_str_fix(),
             group=self.group_by,
             order=self.order_by,
-            limit=self.limit_dict.get('sql', '')
+            limit=self.limit_dict.get("sql", ""),
         )
-        params = self.condition_val + self.limit_dict.get('params', ())
+        params = self.condition_val + self.limit_dict.get("params", ())
 
         self.db_cursor.execute(sql, params)
         return self.db_cursor
@@ -116,22 +112,22 @@ class Table():
         Returns:
             tuple: 字段名列表
         """
-        sql = f'desc `{self.table_name}`;'
+        sql = f"desc `{self.table_name}`;"
         data = self.query(sql)
         fields = []
-        fields = tuple(d['Field'] for d in data)
+        fields = tuple(d["Field"] for d in data)
         return fields
 
     def get_last_sql(self) -> str:
-        '''获取最后执行的sql'''
+        """获取最后执行的sql"""
         return self.db_cursor._last_executed
 
     def get_lastid(self) -> str:
-        '''获取最后作用的id'''
+        """获取最后作用的id"""
         return self.db_cursor.lastrowid
 
     def get_rowcount(self) -> int:
-        '''获取sql影响条数'''
+        """获取sql影响条数"""
         return self.db_cursor.rowcount
 
     def fetch_sql(self, flag: bool = True):
@@ -161,8 +157,9 @@ class Table():
         Returns:
             str: 去除前缀的查询语句
         """
-        self.condition_str = self.condition_str.replace(
-            '1=1 AND ', '').replace('1=1 OR ', '')
+        self.condition_str = self.condition_str.replace("1=1 AND ", "").replace(
+            "1=1 OR ", ""
+        )
         return self.condition_str
 
     def query(self, sql: str, params: list = []) -> list:
@@ -184,7 +181,7 @@ class Table():
                 if not self.cache_key:
                     build_sql = self.build_sql(sql, params)
                     hash = md5()
-                    hash.update(build_sql.encode('utf-8'))
+                    hash.update(build_sql.encode("utf-8"))
                     sql_md5 = hash.hexdigest()
                     self.cache_key = f"{self.table_name}:{sql_md5}"
                 if self.cache_storage.get(self.cache_key):
@@ -192,11 +189,7 @@ class Table():
                 else:
                     self.db_cursor.execute(sql, params)
                     result = self.db_cursor.fetchall()
-                    self.cache_storage.set(
-                        self.cache_key,
-                        result,
-                        self.cache_expire
-                    )
+                    self.cache_storage.set(self.cache_key, result, self.cache_expire)
                     self.__log_sql()
                     return result
 
@@ -237,15 +230,14 @@ class Table():
             self.init()
 
     def __log_sql(self):
-        """记录sql日志
-        """
+        """记录sql日志"""
         if self.__debug:
-            self.log.info(
-                f"[sql]({self.connector.db}) {self.db_cursor._executed}"
-            )
+            self.log.info(f"[sql]({self.connector.db}) {self.db_cursor._executed}")
 
     @staticmethod
-    def parse_where(field: str, symbol: str = '', value: Any = None) -> Tuple[str, tuple]:
+    def parse_where(
+        field: str, symbol: str = "", value: Any = None
+    ) -> Tuple[str, tuple]:
         """解析where条件语句
 
         Args:
@@ -261,95 +253,94 @@ class Table():
             str: 解析后的条件语句
         """
         check_value = True
-        condition_str = ''
+        condition_str = ""
         condition_val = tuple()
 
         symbol = str(symbol).strip().lower()
-        if symbol in ('eq', '='):
-            symbol = '='
-        elif symbol in ('neq', '!=', '<>'):
-            symbol = '<>'
-        elif symbol in ('gt', '>'):
-            symbol = '>'
-        elif symbol in ('egt', '>='):
-            symbol = '>='
-        elif symbol in ('lt', '<'):
-            symbol = '<'
-        elif symbol in ('elt', '<='):
-            symbol = '<='
-        elif symbol in ('in', 'not in'):
+        if symbol in ("eq", "="):
+            symbol = "="
+        elif symbol in ("neq", "!=", "<>"):
+            symbol = "<>"
+        elif symbol in ("gt", ">"):
+            symbol = ">"
+        elif symbol in ("egt", ">="):
+            symbol = ">="
+        elif symbol in ("lt", "<"):
+            symbol = "<"
+        elif symbol in ("elt", "<="):
+            symbol = "<="
+        elif symbol in ("in", "not in"):
             symbol = symbol
             if isinstance(value, str):
-                if not (value.startswith('(') and value.endswith(')')):
-                    value = value.split(',')
-        elif symbol in ('between', 'not between'):
+                if not (value.startswith("(") and value.endswith(")")):
+                    value = value.split(",")
+        elif symbol in ("between", "not between"):
             symbol = symbol
-            r = re.compile(' and ', re.I)
+            r = re.compile(" and ", re.I)
             if isinstance(value, str):
                 if not r.findall(value):
-                    value = value.split(',')
+                    value = value.split(",")
 
             if isinstance(value, (list, tuple)):
                 if len(value) != 2:
-                    raise ValueError(
-                        '`between` optional `value` must 2 arguments')
-                value = f'{value[0]} AND {value[1]}'
+                    raise ValueError("`between` optional `value` must 2 arguments")
+                value = f"{value[0]} AND {value[1]}"
 
             if not isinstance(value, str) or not r.findall(value):
-                raise ValueError('`between` optional `value` error')
+                raise ValueError("`between` optional `value` error")
 
-        elif symbol in ('like', 'not like'):
+        elif symbol in ("like", "not like"):
             symbol = symbol
             if not isinstance(value, str):
-                raise ValueError(
-                    '`like` optional `value` must be a string')
-            if '%' not in value and '_' not in value:
-                raise ValueError(
-                    '`like` optional `value` should contain `%` or `_`')
-        elif symbol == 'is':
-            symbol = 'is'
-        elif symbol in ('null', 'is null'):
-            symbol = ' is null'
+                raise ValueError("`like` optional `value` must be a string")
+            if "%" not in value and "_" not in value:
+                raise ValueError("`like` optional `value` should contain `%` or `_`")
+        elif symbol == "is":
+            symbol = "is"
+        elif symbol in ("null", "is null"):
+            symbol = " is null"
             check_value = False
-        elif symbol in ('not null', 'is not null'):
-            symbol = ' is not null'
+        elif symbol in ("not null", "is not null"):
+            symbol = " is not null"
             check_value = False
-        elif symbol in ('exists', 'not exists'):
-            field = f'{symbol}({field})'
-            symbol = ''
+        elif symbol in ("exists", "not exists"):
+            field = f"{symbol}({field})"
+            symbol = ""
             check_value = False
-        elif symbol == 'exp':
+        elif symbol == "exp":
             if not isinstance(value, str):
-                raise ValueError('`exp` optional `value` should be a string')
-            field = f'{field} {value}'
-            symbol = ''
+                raise ValueError("`exp` optional `value` should be a string")
+            field = f"{field} {value}"
+            symbol = ""
             check_value = False
-        elif symbol == '' and value is None:
+        elif symbol == "" and value is None:
             # field 原生sql
             pass
         else:
             if value is None:
                 value = symbol
-                symbol = '='
+                symbol = "="
             else:
-                raise ValueError('symbol is error')
+                raise ValueError("symbol is error")
         if check_value:
             if value is None:
-                raise ValueError('value could not be none')
+                raise ValueError("value could not be none")
 
-            condition_str += ' AND {} {}'.format(field, symbol)
+            condition_str += " AND {} {}".format(field, symbol)
             if isinstance(value, (list, tuple)):
-                condition_str += ' (%s)' % ('%s,' * len(value))[:-1]
+                condition_str += " (%s)" % ("%s," * len(value))[:-1]
                 condition_val += tuple(value)
             else:
-                condition_str += ' %s'
+                condition_str += " %s"
                 condition_val += (value,)
         else:
-            condition_str += ' AND ' + field + symbol
+            condition_str += " AND " + field + symbol
 
         return condition_str, condition_val
 
-    def where(self, field: Union[str, list, tuple], symbol: str = '', value: Any = None):
+    def where(
+        self, field: Union[str, list, tuple], symbol: str = "", value: Any = None
+    ):
         """条件设置
 
         Args:
@@ -364,8 +355,7 @@ class Table():
             self: 对象本身
         """
         if isinstance(field, str):
-            condition_str, condition_val = Table.parse_where(
-                field, symbol, value)
+            condition_str, condition_val = Table.parse_where(field, symbol, value)
             self.condition_str += condition_str
             self.condition_val += condition_val
         elif isinstance(field, list):
@@ -373,18 +363,17 @@ class Table():
                 if isinstance(condition, (list, tuple)) and len(condition) == 3:
                     self.where(*condition)
                 else:
-                    raise ValueError(
-                        'conditions error => {}'.format(condition))
+                    raise ValueError("conditions error => {}".format(condition))
         elif isinstance(field, dict):
             for k, v in field.items():
                 self.where(k, v)
         else:
             raise ValueError(
-                f'where error:field={field}, symbol={symbol}, value={value}'
+                f"where error:field={field}, symbol={symbol}, value={value}"
             )
         return self
 
-    def where_or(self, field: Union[str, list], symbol: str = '', value: Any = None):
+    def where_or(self, field: Union[str, list], symbol: str = "", value: Any = None):
         """或条件设置
 
         Args:
@@ -398,10 +387,9 @@ class Table():
         Returns:
             self: 对象本身
         """
-        condition_str = ''
+        condition_str = ""
         if isinstance(field, str):
-            condition_str, condition_val = Table.parse_where(
-                field, symbol, value)
+            condition_str, condition_val = Table.parse_where(field, symbol, value)
         elif isinstance(field, list):
             condition_val = tuple()
             for condition in field:
@@ -410,8 +398,8 @@ class Table():
                     condition_str += c_s
                     condition_val += c_v
                 else:
-                    raise Exception('conditions error => {}'.format(condition))
-        self.condition_str += ' OR (' + condition_str[5:] + ')'
+                    raise Exception("conditions error => {}".format(condition))
+        self.condition_str += " OR (" + condition_str[5:] + ")"
         self.condition_val += condition_val
         return self
 
@@ -426,15 +414,9 @@ class Table():
             [type]: [description]
         """
         if step is None:
-            self.limit_dict = {
-                'sql': ' LIMIT %s',
-                'params': (start,)
-            }
+            self.limit_dict = {"sql": " LIMIT %s", "params": (start,)}
         else:
-            self.limit_dict = {
-                'sql': ' LIMIT %s,%s',
-                'params': (start, step)
-            }
+            self.limit_dict = {"sql": " LIMIT %s,%s", "params": (start, step)}
         return self
 
     def page(self, index: int = 1, size: int = 20):
@@ -452,7 +434,7 @@ class Table():
         self.limit(start, end)
         return self
 
-    def order(self, field: str, sort: str = 'asc'):
+    def order(self, field: str, sort: str = "asc"):
         """排序操作
 
         Args:
@@ -466,12 +448,12 @@ class Table():
             self: 对象本身
         """
         sort = str(sort).strip().upper()
-        if sort not in ('ASC', 'DESC'):
-            raise Exception('sort must be ASC or DESC')
+        if sort not in ("ASC", "DESC"):
+            raise Exception("sort must be ASC or DESC")
         if not self.order_by:
-            self.order_by = ' ORDER BY `{}` {}'.format(field, sort)
+            self.order_by = " ORDER BY `{}` {}".format(field, sort)
         else:
-            self.order_by += ',`{}` {}'.format(field, sort)
+            self.order_by += ",`{}` {}".format(field, sort)
         return self
 
     def group(self, field: str):
@@ -484,10 +466,11 @@ class Table():
             self: 对象本身
         """
         if not self.group_by:
-            self.group_by = ' GROUP BY {}'.format(
-                ','.join([f'`{x}`' for x in field.split(',')]))
+            self.group_by = " GROUP BY {}".format(
+                ",".join([f"`{x}`" for x in field.split(",")])
+            )
         else:
-            self.group_by += ',`{}`' + field
+            self.group_by += ",`{}`" + field
 
         return self
 
@@ -501,13 +484,13 @@ class Table():
         Returns:
             self: 对象本身
         """
-        if fields is True or fields == '*':
+        if fields is True or fields == "*":
             fields = self.__get_fields()
         elif isinstance(fields, str):
-            fields = [x.strip() for x in fields.split(',')]
+            fields = [x.strip() for x in fields.split(",")]
         fields = tuple(fields)
         if exclude:
-            if not self.select_fields or self.select_fields == ('*',):
+            if not self.select_fields or self.select_fields == ("*",):
                 self.select_fields = self.__get_fields()
             fields = tuple(set(self.select_fields).difference(set(fields)))
         self.select_fields = fields
@@ -519,20 +502,20 @@ class Table():
         Returns:
             tuple: 查询结果
         """
-        sql = 'SELECT {select_fields} FROM {table} {join} WHERE {where}{group}{order}{limit}'.format(
-            select_fields=','.join(self.select_fields),
+        sql = "SELECT {select_fields} FROM {table} {join} WHERE {where}{group}{order}{limit}".format(
+            select_fields=",".join(self.select_fields),
             table=self.table_name,
-            join=' '.join(self.join_list),
+            join=" ".join(self.join_list),
             where=self.__condition_str_fix(),
             group=self.group_by,
             order=self.order_by,
-            limit=self.limit_dict.get('sql', '')
+            limit=self.limit_dict.get("sql", ""),
         )
-        params = self.condition_val + self.limit_dict.get('params', ())
+        params = self.condition_val + self.limit_dict.get("params", ())
 
         if build_sql:
             real_sql = self.build_sql(sql, params)
-            return f'({real_sql})'
+            return f"({real_sql})"
 
         return self.query(sql, params)
 
@@ -559,9 +542,9 @@ class Table():
         """
         self.select_fields = [field]
         result = self.find()
-        return result.get(field, '')
+        return result.get(field, "")
 
-    def column(self, fields: str, key: str = '') -> Union[list, dict]:
+    def column(self, fields: str, key: str = "") -> Union[list, dict]:
         """按列取数据
 
         Args:
@@ -572,7 +555,7 @@ class Table():
             list|dict: 包含键名的返回字典
         """
         if isinstance(fields, str):
-            fields = fields.split(',')
+            fields = fields.split(",")
         if key and key not in fields:
             fields.append(key)
         self.select_fields = fields
@@ -588,7 +571,7 @@ class Table():
         else:
             return {x[key]: x for x in result}
 
-    def alias(self, short_name: str = ''):
+    def alias(self, short_name: str = ""):
         """数据表别名
 
         Args:
@@ -600,7 +583,14 @@ class Table():
         self.table_name = f"{self.table_name} AS {short_name}"
         return self
 
-    def join(self, table_name: str, as_name: str = '', on: str = '', join: str = 'inner', and_str: str = ''):
+    def join(
+        self,
+        table_name: str,
+        as_name: str = "",
+        on: str = "",
+        join: str = "inner",
+        and_str: str = "",
+    ):
         """连表操作
 
         Args:
@@ -615,22 +605,23 @@ class Table():
         """
         if not as_name:
             if table_name == self.table_name:
-                raise ValueError('table name should set `as_name`')
+                raise ValueError("table name should set `as_name`")
 
             as_name = table_name
 
         join = join.upper()
-        if join not in ('INNER', 'LEFT', 'RIGHT', 'FULL OUTER'):
+        if join not in ("INNER", "LEFT", "RIGHT", "FULL OUTER"):
             raise ValueError(
-                "`join` type must in ('INNER','LEFT','RIGHT','FULL OUTER')")
+                "`join` type must in ('INNER','LEFT','RIGHT','FULL OUTER')"
+            )
 
         def make_join_str():
-            if 'join' in table_name:
+            if "join" in table_name:
                 return table_name
 
-            join_str = f'{join} JOIN {table_name} AS {as_name} ON {on}'
+            join_str = f"{join} JOIN {table_name} AS {as_name} ON {on}"
             if and_str:
-                join_str += f' AND {and_str}'
+                join_str += f" AND {and_str}"
 
             return join_str
 
@@ -646,8 +637,8 @@ class Table():
             sql2 (str): sql语句
             union_all (bool, optional): 是否union all. Defaults to False.
         """
-        symbol = 'UNION ALL' if union_all else 'UNION'
-        self.table_name = f'({sql1} {symbol} {sql2}) AS t'
+        symbol = "UNION ALL" if union_all else "UNION"
+        self.table_name = f"({sql1} {symbol} {sql2}) AS t"
         return self
 
     def insert(self, data: Union[dict, List[dict]], replace: bool = False) -> int:
@@ -662,24 +653,21 @@ class Table():
         """
 
         if isinstance(data, dict):
-            keys = ','.join(data.keys())
-            inputs = '(' + ','.join(['%s'] * len(data)) + '),'
+            keys = ",".join(data.keys())
+            inputs = "(" + ",".join(["%s"] * len(data)) + "),"
             params = tuple(data.values())
         elif isinstance(data, list):
-            inputs = ''
+            inputs = ""
             params = tuple()
             for d in data:
-                keys = ','.join(d.keys())
-                inputs += '(' + ','.join(['%s'] * len(d)) + '),'
+                keys = ",".join(d.keys())
+                inputs += "(" + ",".join(["%s"] * len(d)) + "),"
                 params += tuple(d.values())
 
         inputs = inputs[:-1]
-        action = 'REPLACE' if replace else 'INSERT'
-        sql = '{action} INTO {table} ({keys}) VALUES {inputs};'.format(
-            action=action,
-            table=self.table_name,
-            keys=keys,
-            inputs=inputs
+        action = "REPLACE" if replace else "INSERT"
+        sql = "{action} INTO {table} ({keys}) VALUES {inputs};".format(
+            action=action, table=self.table_name, keys=keys, inputs=inputs
         )
         result = self.execute(sql, params)
         return result
@@ -694,15 +682,12 @@ class Table():
         Returns:
             int: 影响行数
         """
-        if not all_record and self.condition_str == '1=1':
-            raise ValueError('please set `where` conditions!')
-        inputs = ','.join(
-            map(lambda k: k + '=%s', data.keys()))
+        if not all_record and self.condition_str == "1=1":
+            raise ValueError("please set `where` conditions!")
+        inputs = ",".join(map(lambda k: k + "=%s", data.keys()))
         params = tuple(data.values()) + self.condition_val
-        sql = 'UPDATE {table} SET {inputs} WHERE {where};'.format(
-            table=self.table_name,
-            inputs=inputs,
-            where=self.__condition_str_fix()
+        sql = "UPDATE {table} SET {inputs} WHERE {where};".format(
+            table=self.table_name, inputs=inputs, where=self.__condition_str_fix()
         )
         result = self.execute(sql, params)
         return result
@@ -719,17 +704,16 @@ class Table():
         Returns:
             int: 影响行数
         """
-        if not all_record and self.condition_str == '1=1':
-            raise ValueError('please set `where` conditions!')
-        sql = 'DELETE FROM {table} WHERE {where};'.format(
-            table=self.table_name,
-            where=self.__condition_str_fix()
+        if not all_record and self.condition_str == "1=1":
+            raise ValueError("please set `where` conditions!")
+        sql = "DELETE FROM {table} WHERE {where};".format(
+            table=self.table_name, where=self.__condition_str_fix()
         )
         result = self.execute(sql, self.condition_val)
         return result
 
     @staticmethod
-    def to_number(s: Union[str, int, float], key: str = ''):
+    def to_number(s: Union[str, int, float], key: str = ""):
         """转换为数值
 
         Args:
@@ -747,15 +731,15 @@ class Table():
 
         if isinstance(s, str):
             s = s.strip()
-            if re.match(r'^\d+$', s):
+            if re.match(r"^\d+$", s):
                 s = int(s)
                 return s
-            if re.match(r'^\d+\.\d+$', s):
+            if re.match(r"^\d+\.\d+$", s):
                 s = float(s)
                 return s
 
         if not isinstance(s, (int, float)) and key:
-            raise ValueError(f'`{key}` must number')
+            raise ValueError(f"`{key}` must number")
 
         return s
 
@@ -769,13 +753,13 @@ class Table():
         Returns:
             bool: 递增结果
         """
-        step = Table.to_number(step, 'step')
+        step = Table.to_number(step, "step")
 
-        if self.condition_str == '1=1':
-            raise ValueError('please set `where` conditions!')
-        symbol = '+' if step > 0 else ''
+        if self.condition_str == "1=1":
+            raise ValueError("please set `where` conditions!")
+        symbol = "+" if step > 0 else ""
 
-        sql = 'UPDATE {table} SET `{field}` = `{field}`{symbol}{step} WHERE {where}'.format(
+        sql = "UPDATE {table} SET `{field}` = `{field}`{symbol}{step} WHERE {where}".format(
             table=self.table_name,
             field=field,
             symbol=symbol,
@@ -795,7 +779,7 @@ class Table():
         Returns:
             bool: 递减结果
         """
-        step = Table.to_number(step, 'step')
+        step = Table.to_number(step, "step")
         return self.inc(field, step=(0 - step))
 
     def max(self, field: str) -> Union[int, float]:
@@ -807,7 +791,7 @@ class Table():
         Returns:
             number: 最大值
         """
-        sql = 'SELECT MAX({field}) AS max FROM `{table}` WHERE {where} LIMIT 1'.format(
+        sql = "SELECT MAX({field}) AS max FROM `{table}` WHERE {where} LIMIT 1".format(
             table=self.table_name,
             field=field,
             where=self.__condition_str_fix(),
@@ -820,7 +804,7 @@ class Table():
         if not result:
             return 0
 
-        max_value = result[0]['max']
+        max_value = result[0]["max"]
         if max_value is None:
             return 0
 
@@ -838,10 +822,12 @@ class Table():
         Returns:
             number: 合计
         """
-        sql = 'SELECT SUM(`{field}`) AS sum FROM `{table}` WHERE {where} LIMIT 1'.format(
-            table=self.table_name,
-            field=field,
-            where=self.__condition_str_fix(),
+        sql = (
+            "SELECT SUM(`{field}`) AS sum FROM `{table}` WHERE {where} LIMIT 1".format(
+                table=self.table_name,
+                field=field,
+                where=self.__condition_str_fix(),
+            )
         )
         result = self.query(sql, self.condition_val)
 
@@ -851,7 +837,7 @@ class Table():
         if not result:
             return 0
 
-        sum_value = result[0]['sum']
+        sum_value = result[0]["sum"]
         if sum_value is None:
             return 0
 
@@ -869,10 +855,12 @@ class Table():
         Returns:
             number: 平均值
         """
-        sql = 'SELECT AVG(`{field}`) AS avg FROM `{table}` WHERE {where} LIMIT 1'.format(
-            table=self.table_name,
-            field=field,
-            where=self.__condition_str_fix(),
+        sql = (
+            "SELECT AVG(`{field}`) AS avg FROM `{table}` WHERE {where} LIMIT 1".format(
+                table=self.table_name,
+                field=field,
+                where=self.__condition_str_fix(),
+            )
         )
         result = self.query(sql, self.condition_val)
 
@@ -882,7 +870,7 @@ class Table():
         if not result:
             return 0
 
-        avg_value = result[0]['avg']
+        avg_value = result[0]["avg"]
         if avg_value is None:
             return 0
 
@@ -891,7 +879,7 @@ class Table():
 
         return Table.to_number(avg_value)
 
-    def count(self, field: str = '*') -> Union[str, int]:
+    def count(self, field: str = "*") -> Union[str, int]:
         """获取数据行数
 
         Args:
@@ -900,7 +888,7 @@ class Table():
         Returns:
             int: 行数量
         """
-        sql = 'SELECT COUNT({field}) AS count FROM `{table}` WHERE {where} LIMIT 1'.format(
+        sql = "SELECT COUNT({field}) AS count FROM `{table}` WHERE {where} LIMIT 1".format(
             field=field,
             table=self.table_name,
             where=self.__condition_str_fix(),
@@ -912,7 +900,7 @@ class Table():
 
         if not result:
             return 0
-        return (result[0]['count'] or 0)
+        return result[0]["count"] or 0
 
     def copy_to(self, new_table: str = None, create_blank_table: bool = False) -> int:
         """复制表 SELECT INTO
@@ -925,15 +913,15 @@ class Table():
             int: 执行结果
         """
         if new_table is None:
-            new_table = f'{self.table_name}_copy'
+            new_table = f"{self.table_name}_copy"
         if isinstance(self.select_fields, (list, tuple)):
-            fields = ', '.join(self.select_fields)
+            fields = ", ".join(self.select_fields)
 
-        sql = f'SELECT {fields} INTO {new_table} FROM {self.table_name}'
+        sql = f"SELECT {fields} INTO {new_table} FROM {self.table_name}"
         if create_blank_table:
-            sql += ' WHERE 1=0'
+            sql += " WHERE 1=0"
         else:
-            sql += f' WHERE {self.__condition_str_fix()}'
+            sql += f" WHERE {self.__condition_str_fix()}"
         return self.execute(sql, self.condition_val)
 
     def insert_to(self, new_table: str, fields: Union[str, list, tuple] = None) -> int:
@@ -946,27 +934,27 @@ class Table():
         Returns:
             int: affect rows count
         """
-        sql = f'INSERT INTO {new_table}'
+        sql = f"INSERT INTO {new_table}"
         if fields is not None:
             if isinstance(fields, str):
-                if fields.startswith('('):
-                    sql += f' {fields} '
+                if fields.startswith("("):
+                    sql += f" {fields} "
                 else:
-                    fields = fields.split(',')
+                    fields = fields.split(",")
             if isinstance(fields, (list, tuple)):
-                sql += ' ({})'.format(','.join(itertools.repeat('%s', len(fields))))
+                sql += " ({})".format(",".join(itertools.repeat("%s", len(fields))))
 
-        sql += ' SELECT {select_fields} FROM {table} {join} WHERE {where}{group}{order}{limit}'.format(
-            select_fields=','.join(self.select_fields),
+        sql += " SELECT {select_fields} FROM {table} {join} WHERE {where}{group}{order}{limit}".format(
+            select_fields=",".join(self.select_fields),
             table=self.table_name,
-            join=' '.join(self.join_list),
+            join=" ".join(self.join_list),
             where=self.__condition_str_fix(),
             group=self.group_by,
             order=self.order_by,
-            limit=self.limit_dict.get('sql', '')
+            limit=self.limit_dict.get("sql", ""),
         )
 
-        params = self.condition_val + self.limit_dict.get('params', tuple())
+        params = self.condition_val + self.limit_dict.get("params", tuple())
         if isinstance(fields, (list, tuple)):
             params = tuple(fields) + params
 
@@ -978,10 +966,10 @@ class Table():
         Returns:
             bool: 判断当前查询条件下是否存在数据
         """
-        sql = 'SELECT 1 FROM {table} {join} WHERE {where} LIMIT 1'.format(
+        sql = "SELECT 1 FROM {table} {join} WHERE {where} LIMIT 1".format(
             table=self.table_name,
-            join=' '.join(self.join_list),
-            where=self.__condition_str_fix()
+            join=" ".join(self.join_list),
+            where=self.__condition_str_fix(),
         )
         result = self.query(sql, self.condition_val)
 
@@ -1005,14 +993,12 @@ class Table():
         sql = []
         for row in data:
             if key not in row:
-                raise ValueError(f'key:{key} not in data item')
+                raise ValueError(f"key:{key} not in data item")
             self.init()
-            sql.append(
-                self.where(key, row[key]).fetch_sql().update(row)
-            )
+            sql.append(self.where(key, row[key]).fetch_sql().update(row))
         result = 0
         for x in range(0, len(sql), 100):
-            for s in sql[x:x + 100]:
+            for s in sql[x : x + 100]:
                 self.db_cursor.execute(s)
                 result += self.get_rowcount()
             self.connector.commit()

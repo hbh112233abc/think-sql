@@ -1,48 +1,53 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+__author__ = "hbh112233abc@163.com"
 
-import os
-import sys
-import platform
-from functools import lru_cache
+import re
+from typing import Optional
 
-from loguru import logger
+from pydantic import BaseModel, Field
 
 
-@lru_cache()
-def get_logger(logger_name: str = '', work_path: str = '', debug: bool = False, level: str = 'INFO') -> logger:
-    """设置日志模块
-
-    Args:
-        logger_name (str, optional): 日志名称. Defaults to 'root'.
-        work_path (str, optional): 工作路径用于设置日志路径logs. Defaults to None.
-        debug (bool, optional): 是否调试模式. Defaults to False.
-        level (str, optional): 日志记录级别. Defaults to 'DEBUG'.
-
-    Returns:
-        object: logger
-    """
-    if not logger_name:
-        logger_name = os.path.basename(sys.argv[0]).split('.')[0]
-
-    if not work_path:
-        work_path = os.path.dirname(os.path.abspath(sys.argv[0]))
-    log_path = os.path.join(work_path, 'logs')
-    if not os.path.isdir(log_path):
-        os.makedirs(log_path)
-
-    if debug:
-        level = 'DEBUG'
-
-    log_file = os.path.join(log_path, f'{logger_name}.log')
-
-    logger.add(
-        log_file,
-        filter="",
-        level=level,
-        rotation="00:00",
-        retention="10 days",
+class DBConfig(BaseModel):
+    type: str = Field("mysql", description="Type of the database,default is `mysql`")
+    host: str = Field(
+        default="127.0.0.1", description="Host of the database,default is `127.0.0.1`"
     )
+    port: int = Field(
+        default=3306, description="Port of the database,default is `3306`"
+    )
+    username: str = Field(
+        default="root", description="Username of the database,default is `root`"
+    )
+    password: str = Field(
+        default="root", description="Password of the Username,default is `root`"
+    )
+    database: Optional[str] = Field(default="", description="Database selected")
 
-    logger.info(f'-->System:{platform.platform()}-->')
-    logger.info(f'-->Python:{sys.version}-->')
-    logger.info(f'log_path: {log_path} [{level}]')
-    return logger
+    @staticmethod
+    def parse_dsn(dsn: str) -> "DBConfig":
+        """
+        Parse a database configuration string into a dictionary.
+
+        :param cfg: A string in the format "username:'password'@host:port/database"
+        :return: A dictionary with keys 'username', 'password', 'host', 'port', and 'database'
+        :raises ValueError: If the input string does not match the expected format
+
+        :return
+        {
+            "host":"",
+            "port":3306,
+            "username":"",
+            "password":"",
+            "database":"",
+        }
+        """
+        pattern = r"(?P<username>.*?):'(?P<password>.*?)'@(?P<host>.*?):(?P<port>\d+)(/(?P<database>.*))?"
+        match = re.match(pattern, dsn)
+        if not match:
+            raise ValueError(
+                "Invalid db config format, expected `username:'password'@host:port/database`"
+            )
+        config = match.groupdict()
+        dbc = DBConfig.model_validate(config)
+        return dbc
