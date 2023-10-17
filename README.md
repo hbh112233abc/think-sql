@@ -12,8 +12,10 @@ pip install think-sql
 
 > Database: `test` Table: `user`
 
-```
-from think-sql.database import DB
+- example dict params
+
+```python
+from think_sql.database import DB
 
 config = {
     'host': '127.0.0.1',
@@ -23,9 +25,39 @@ config = {
     'database': 'test',
 }
 
-with DB(**config) as db:
+with DB(config) as db:
     data = db.table('user').where('id',1).find()
     print(data)
+
+```
+
+- example dsn str
+
+```python
+from think_sql.database import DB
+
+with DB("root:'root'@127.0.0.1:3306/test") as db:
+    data = db.table('user').where('id',1).find()
+    print(data)
+
+```
+
+- example DBConfig
+
+```python
+from think_sql.database import DB
+from think_sql.util import DBConfig
+config = DBConfig(
+  host='127.0.0.1',
+  port=3306,
+  username='root',
+  password='root',
+  database='test',
+)
+with DB(config) as db:
+    data = db.table('user').where('id',1).find()
+    print(data)
+
 ```
 
 result
@@ -378,6 +410,9 @@ result
 #### sql_helper
 
 ```python
+from think_sql.database import DB
+from think_sql.sql_helper import help
+
 db_dsn = "root:'password'@127.0.0.1:3306/database"
 with DB(db_dsn) as db:
     sql = "slow query sql"
