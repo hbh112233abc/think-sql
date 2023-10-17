@@ -62,12 +62,12 @@ with DB(config) as db:
 
 result
 
-```
+```json
 {
-    "id":1,
-    "username":"hbh112233abc",
-    "age":"36",
-    "address":"FUJIAN.XIAMEN"
+  "id": 1,
+  "username": "hbh112233abc",
+  "age": "36",
+  "address": "FUJIAN.XIAMEN"
 }
 ```
 
@@ -82,7 +82,8 @@ result
   - config:Union[str,dict,DBConfig]
     - str: `username:'password'@host:port/database`
     - dict: `{'host':'127.0.0.1','port':3306,'username':'root','password':'root','database':'test'}`
-    - DBConfig: `DBConfig(host='127.0.0.1',port=3306,username='root',password='root',database='test')
+    - DBConfig: `DBConfig(host='127.0.0.1',port=3306,username='root',password='root',database='test')`
+  - params:dict pymysql connect other params
 
 - connect()
   connect database use **init** params
@@ -94,7 +95,7 @@ result
   check connected, try reconnect database
 
 - query(sql,params=())
-  query sql return cursor.fetchall
+  query sql return cursor.fetchall List[dict]
 
 - execute(sql,params=())
   execute sql write operate(ex:insert,update,delete,...)
@@ -146,32 +147,32 @@ result
 
   > where(field,value)
 
-  ```
+  ```sql
   where field = value
   ```
 
   > where(field,symbol,value)
 
-  ```
+  ```sql
   where field symbol value
   ```
 
-  > where(
-
-        [
-            [field1,symbol1,value1],
-            [field2,symbol2,value2]
-        ]
-
+  ```python
+  where(
+      [
+          [field1,symbol1,value1],
+          [field2,symbol2,value2]
+      ]
   )
-
   ```
+
+  ```sql
   where field1 symbol1 value1 and field2 symbol2 value2
   ```
 
   > where(field1,symbol1,value1).where(field2,symbol2,value2)
 
-  ```
+  ```sql
   where field1 symbol1 value1 and field2 symbol2 value2
   ```
 
@@ -258,11 +259,19 @@ result
   - `join` join type in 'INNER', 'LEFT', 'RIGHT', 'FULL OUTER'
   - `and_str` and condition
     demo
-  ```
-  db.table('table1').alias('a').join('table2','b','a.id=b.a_id','left').join('table2','c','c.a_id=a.id').field('a.id,a.name,b.id as b_id,b.score,c.id as c_id,c.remark').where('a.id',1).find()
+  ```python
+  db.table('table1').alias('a').join(
+    'table2','b','a.id=b.a_id','left'
+  ).join(
+    'table3','c','c.a_id=a.id'
+  ).field(
+    'a.id,a.name,b.id as b_id,b.score,c.id as c_id,c.remark'
+  ).where(
+    'a.id',1
+  ).find()
   ```
   sql
-  ```
+  ```sql
   SELECT
       a.id,
       a.name,
@@ -285,7 +294,7 @@ result
 
   _demo_
 
-  ```
+  ```python
   sql1 = db.table('table1').field('name,score').where('status',1).select(build_sql=True)
   sql2 = db.table('table2').field('name,score').where('status',1).select(build_sql=True)
 
@@ -294,7 +303,7 @@ result
 
   _sql_
 
-  ```
+  ```sql
   SELECT
   *
   FROM
@@ -355,13 +364,17 @@ result
 
   _demo_
 
-  ```
-  db.table('user').field('name,score').where('score','>',60).copy_to('good_boy')
+  ```sql
+  db.table('user').field(
+    'name,score'
+  ).where(
+    'score','>',60
+  ).copy_to('good_boy')
   ```
 
   _sql_
 
-  ```
+  ```sql
   SELECT
     `name`,
       `score`
@@ -374,7 +387,7 @@ result
 
 - insert_to(new_table: str, fields: Union[str, list, tuple] = None) -> int
 
-  ```
+  ```sql
   INSERT INTO {new_table} SELECT {select_fields} FROM {table} {join} WHERE {where}{group}{order}{limit}
   ```
 
@@ -388,7 +401,7 @@ result
 
   _demo_
 
-  ```
+  ```python
   data = [
       {'id':1,'score':66},
       {'id':2,'score':59},
@@ -400,7 +413,7 @@ result
 
   _sql_
 
-  ```
+  ```sql
   update `user` set score = 66 where id = 1;
   update `user` set score = 59 where id = 2;
   update `user` set score = 86 where id = 3;
