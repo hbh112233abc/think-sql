@@ -43,7 +43,14 @@ result
 
 #### think_sql.database.DB
 
-- **init**(database='test',host='127.0.0.1',username='root',password='root',port=3306,params={})
+- **init**(config:Union[str,dict,DBConfig],params={})
+
+  init database, return DB instance
+
+  - config:Union[str,dict,DBConfig]
+    - str: `username:'password'@host:port/database`
+    - dict: `{'host':'127.0.0.1','port':3306,'username':'root','password':'root','database':'test'}`
+    - DBConfig: `DBConfig(host='127.0.0.1',port=3306,username='root',password='root',database='test')
 
 - connect()
   connect database use **init** params
@@ -367,6 +374,36 @@ result
   update `user` set score = 86 where id = 3;
   update `user` set score = 90 where id = 4;
   ```
+
+#### sql_helper
+
+```python
+db_dsn = "root:'password'@127.0.0.1:3306/database"
+with DB(db_dsn) as db:
+    sql = "slow query sql"
+    help(db, sql)
+```
+
+> result
+
+```shell
+1) 输入的SQL语句是：
+----------------------------------------------------------------------------------------------------
+SELECT *
+FROM hy_cabrecs
+WHERE finished_count > 0
+----------------------------------------------------------------------------------------------------
+2) EXPLAIN执行计划:
++------+---------------+------------+--------------+--------+-----------------+-------+-----------+-------+--------+------------+-------------+
+| id   | select_type   | table      | partitions   | type   | possible_keys   | key   | key_len   | ref   | rows   | filtered   | Extra       |
++======+===============+============+==============+========+=================+=======+===========+=======+========+============+=============+
+| 1    | SIMPLE        | hy_cabrecs | None         | ALL    | None            | None  | None      | None  | 14422  | 33.33      | Using where |
++------+---------------+------------+--------------+--------+-----------------+-------+-----------+-------+--------+------------+-------------+
+3) 索引优化建议：
+----------------------------------------------------------------------------------------------------
+取出表 【hy_cabrecs】 where条件字段 【finished_count】 100000 条记录，重复的数据有：【16093】 条，没有必要为该字段创建索引。
+ 【hy_cabrecs】 表，无需添加任何索引。
+```
 
 ## Development
 
