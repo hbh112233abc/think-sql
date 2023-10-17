@@ -97,7 +97,7 @@ class DB:
         """
         if exc_value is not None:
             if self.cursor._executed:
-                self.log.info(f"[sql]({self.database}) {self.cursor._executed}")
+                self.log.info(f"[sql]({self.config.database}) {self.cursor._executed}")
             self.log.exception(exc_value)
             self.conn.rollback()
         else:
