@@ -294,10 +294,16 @@ def help(db: DB, sql_query: str, sample_size: int = 100000) -> List[str]:
         # 判断是否需要加索引的条件
         if (
             len(join_fields) != 0
-            and ((row["type"] == "ALL" and row["key"] is None) or row["rows"] >= 1)
+            and (
+                (row["type"] == "ALL" and row["key"] is None)
+                or (isinstance(row["rows"], int) and row["rows"] >= 1)
+            )
         ) or (
             len(join_fields) == 0
-            and ((row["type"] == "ALL" and row["key"] is None) or row["rows"] >= 1000)
+            and (
+                (row["type"] == "ALL" and row["key"] is None)
+                or (isinstance(row["rows"], int) and row["rows"] >= 1000)
+            )
         ):
             # 判断表是否有别名，没有别名的情况：
             if has_table_alias(table_aliases) is False and contains_dot is False:
@@ -361,7 +367,9 @@ def help(db: DB, sql_query: str, sample_size: int = 100000) -> List[str]:
                         index_column=index_columns,
                     )
                     if not index_result:
-                        if row["key"] is None or row["rows"] >= 1000:
+                        if row["key"] is None or (
+                            isinstance(row["rows"], int) and row["rows"] >= 1000
+                        ):
                             log(
                                 f"建议添加索引：ALTER TABLE {table_name} ADD INDEX idx_{index_name}({index_columns});",
                                 "warning",
@@ -388,7 +396,9 @@ def help(db: DB, sql_query: str, sample_size: int = 100000) -> List[str]:
                         index_number=len(add_index_fields),
                     )
                     if not index_result_list:
-                        if row["key"] is None or row["rows"] >= 1000:
+                        if row["key"] is None or (
+                            isinstance(row["rows"], int) and row["rows"] >= 1000
+                        ):
                             log(
                                 f"建议添加索引：ALTER TABLE {table_name} ADD INDEX idx_{merged_name}({merged_columns});",
                                 "warning",
@@ -495,7 +505,9 @@ def help(db: DB, sql_query: str, sample_size: int = 100000) -> List[str]:
                         index_column=index_columns,
                     )
                     if not index_result:
-                        if row["key"] is None or row["rows"] >= 1000:
+                        if row["key"] is None or (
+                            isinstance(row["rows"], int) and row["rows"] >= 1000
+                        ):
                             log(
                                 f"建议添加索引：ALTER TABLE {table_real_name} ADD INDEX idx_{index_name}({index_columns});",
                                 "warning",
@@ -522,7 +534,9 @@ def help(db: DB, sql_query: str, sample_size: int = 100000) -> List[str]:
                         index_number=len(add_index_fields),
                     )
                     if not index_result_list:
-                        if row["key"] is None or row["rows"] >= 1000:
+                        if row["key"] is None or (
+                            isinstance(row["rows"], int) and row["rows"] >= 1000
+                        ):
                             log(
                                 f"建议添加索引：ALTER TABLE {table_real_name} ADD INDEX idx_{merged_name}({merged_columns});",
                                 "warning",
