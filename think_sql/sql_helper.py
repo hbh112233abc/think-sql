@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 __author__ = "hbh112233abc@163.com"
 
+from collections import Counter
 import textwrap
-from typing import List
+from typing import Any, List, Tuple
 
 import sqlparse
 from tabulate import tabulate
@@ -69,7 +70,7 @@ def has_table_alias(table_alias: dict) -> bool:
 
 def count_column_value(
     db: DB, table_name: str, field_name: str, sample_size: int
-) -> List[dict]:
+) -> List[Tuple[Any, int]]:
     """取列阈值
     <sample_size 取(SELECT COUNT(*) FROM {table_name}) / 2
     否则 {sample_size} / 2
@@ -81,7 +82,7 @@ def count_column_value(
         sample_size (int): number of samples
 
     Returns:
-        List[dict]: count result
+        List[Tuple[Any, int]]: count result
 
 
     在这个查询中，使用了CASE语句来判断数据行数是否小于sample_size。如果数据行数小于sample_size，则使用
@@ -109,6 +110,7 @@ def count_column_value(
     '''
 
     # 默认采用子查询兼容MySQL 5.7版本
+    '''
     sql = f"""
     SELECT COUNT(*) as count
     FROM (
@@ -125,6 +127,13 @@ def count_column_value(
     END;
     """
     result = db.query(sql)
+    '''
+    field_list = db.table(table_name).limit(sample_size).column(field_name)
+    distinct_fields = Counter(field_list).most_common(3)
+    table_info = db.query(f"SHOW TABLE STATUS WHERE Name='{table_name}';")
+    table_count = int(table_info[0]["Rows"])
+    limit_count = min(table_count, sample_size) / 2
+    result = list(filter(lambda x: x[1] >= limit_count, distinct_fields))
     return result
 
 
@@ -317,7 +326,7 @@ def help(db: DB, sql_query: str, sample_size: int = 100000) -> List[str]:
                         )
                         # log(f"cardinality: {cardinality}")
                         if cardinality:
-                            count_value = cardinality[0]["count"]
+                            count_value = cardinality[0][1]
                             log(
                                 f"取出表 【{table_name}】 where条件字段 【{where_field}】 {sample_size} 条记录，重复的数据有：【{count_value}】 条，没有必要为该字段创建索引。"
                             )
@@ -330,7 +339,7 @@ def help(db: DB, sql_query: str, sample_size: int = 100000) -> List[str]:
                             db, table_name, group_field, sample_size
                         )
                         if cardinality:
-                            count_value = cardinality[0]["count"]
+                            count_value = cardinality[0][1]
                             log(
                                 f"取出表 【{table_name}】 group by条件字段 【{group_field}】 {sample_size} 条记录，重复的数据有：【{count_value}】 条，没有必要为该字段创建索引。"
                             )
@@ -343,7 +352,7 @@ def help(db: DB, sql_query: str, sample_size: int = 100000) -> List[str]:
                             db, table_name, order_field, sample_size
                         )
                         if cardinality:
-                            count_value = cardinality[0]["count"]
+                            count_value = cardinality[0][1]
                             log(
                                 f"取出表 【{table_name}】 order by条件字段 【{order_field}】 {sample_size} 条记录，重复的数据有：【{count_value}】 条，没有必要为该字段创建索引。"
                             )
@@ -441,7 +450,7 @@ def help(db: DB, sql_query: str, sample_size: int = 100000) -> List[str]:
                             sample_size,
                         )
                         if cardinality:
-                            count_value = cardinality[0]["count"]
+                            count_value = cardinality[0][1]
                             log(
                                 f"取出表 【{table_real_name}】 where条件字段 【{where_field}】 {sample_size} 条记录，重复的数据有：【{count_value}】 条，没有必要为该字段创建索引。"
                             )
@@ -461,7 +470,7 @@ def help(db: DB, sql_query: str, sample_size: int = 100000) -> List[str]:
                             sample_size,
                         )
                         if cardinality:
-                            count_value = cardinality[0]["count"]
+                            count_value = cardinality[0][1]
                             log(
                                 f"取出表 【{table_real_name}】 group by条件字段 【{group_field}】 {sample_size} 条记录，重复的数据有：【{count_value}】 条，没有必要为该字段创建索引。"
                             )
@@ -481,7 +490,7 @@ def help(db: DB, sql_query: str, sample_size: int = 100000) -> List[str]:
                             sample_size,
                         )
                         if cardinality:
-                            count_value = cardinality[0]["count"]
+                            count_value = cardinality[0][1]
                             log(
                                 f"取出表 【{table_real_name}】 order by条件字段 【{order_field}】 {sample_size} 条记录，重复的数据有：【{count_value}】 条，没有必要为该字段创建索引。"
                             )
