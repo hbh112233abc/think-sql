@@ -298,27 +298,20 @@ def help(db: DB, sql_query: str, sample_size: int = 100000) -> List[str]:
                     )
                     log(index_static)
 
+    table_aliases_exists = has_table_alias(table_aliases)
+
     # 解析执行计划，查找需要加索引的字段
     for row in explain_result:
         # 获取查询语句涉及的表和字段信息
         table_name = row["table"]
         add_index_fields = []
         # 判断是否需要加索引的条件
-        if (
-            len(join_fields) != 0
-            and (
-                (row["type"] == "ALL" and row["key"] is None)
-                or (isinstance(row["rows"], int) and row["rows"] >= 1)
-            )
-        ) or (
-            len(join_fields) == 0
-            and (
-                (row["type"] == "ALL" and row["key"] is None)
-                or (isinstance(row["rows"], int) and row["rows"] >= 1000)
-            )
+        if (row["type"] == "ALL" and row["key"] is None) or (
+            isinstance(row["rows"], int)
+            and row["rows"] >= (1 if len(join_fields) != 0 else 1000)
         ):
             # 判断表是否有别名，没有别名的情况：
-            if has_table_alias(table_aliases) is False and contains_dot is False:
+            if not table_aliases_exists and not contains_dot:
                 if len(where_fields) != 0:
                     for where_field in where_fields:
                         cardinality = count_column_value(
@@ -429,8 +422,8 @@ def help(db: DB, sql_query: str, sample_size: int = 100000) -> List[str]:
                     log(index_static)
 
             # 判断表是否有别名，有别名的情况：
-            if has_table_alias(table_aliases) is True or contains_dot is True:
-                if has_table_alias(table_aliases) is True:
+            if table_aliases_exists or contains_dot:
+                if table_aliases_exists:
                     table_real_name = table_aliases[table_name]
                 else:
                     table_real_name = table_name
