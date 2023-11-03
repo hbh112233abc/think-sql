@@ -223,8 +223,10 @@ def help(db: DB, sql_query: str, sample_size: int = 100000) -> List[str]:
     sql = f"EXPLAIN {sql_query}"
     try:
         explain_result = db.query(sql)
+        if not explain_result:
+            return log(f"Couldn't explain: {sql}", "warning")
     except Exception as e:
-        raise RuntimeError("MySQL 内部错误：", e)
+        raise RuntimeError("MySQL error:", e)
 
     # 提取列名
     e_column_names = list(explain_result[0].keys())
