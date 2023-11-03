@@ -75,7 +75,8 @@ class DB:
             self.connect.commit()
             return result
         except Exception as e:
-            logger.exception(f"Failed to execute: {e}")
+            self.log.warning(sql)
+            logger.exception(e)
             return 0
 
     def query(self, sql, params=()) -> List[dict]:
@@ -89,6 +90,7 @@ class DB:
             if self.cursor.rowcount > 0:
                 result = self.cursor.fetchall()
         except Exception as e:
+            self.log.warning(sql)
             self.log.exception(e)
         return result
 
