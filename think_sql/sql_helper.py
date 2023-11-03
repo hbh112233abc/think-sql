@@ -224,7 +224,8 @@ def help(db: DB, sql_query: str, sample_size: int = 100000) -> List[str]:
     try:
         explain_result = db.query(sql)
         if not explain_result:
-            return log(f"Couldn't explain: {sql}", "warning")
+            log(f"Couldn't explain: {sql}", "warning")
+            return logs
     except Exception as e:
         raise RuntimeError("MySQL error:", e)
 
