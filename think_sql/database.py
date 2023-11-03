@@ -3,6 +3,7 @@
 __author__ = "hbh112233abc@163.com"
 
 
+import re
 from typing import List, Union
 import pymysql
 
@@ -66,6 +67,10 @@ class DB:
 
     def execute(self, sql, params=()) -> int:
         try:
+            if not params:
+                sql = sql.replace("%", "%%")
+            else:
+                sql = re.sub(r"(?<!%)%(?![%s])(?![%\(])", "%%", sql)
             result = self.cursor.execute(sql.strip(), params)
             self.connect.commit()
             return result
@@ -76,6 +81,10 @@ class DB:
     def query(self, sql, params=()) -> List[dict]:
         result = []
         try:
+            if not params:
+                sql = sql.replace("%", "%%")
+            else:
+                sql = re.sub(r"(?<!%)%(?![%s])(?![%\(])", "%%", sql)
             self.cursor.execute(sql.strip(), params)
             if self.cursor.rowcount > 0:
                 result = self.cursor.fetchall()
