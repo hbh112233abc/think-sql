@@ -216,22 +216,24 @@ def help(db: DB, sql_query: str, sample_size: int = 100000) -> List[str]:
 
     if "SELECT" not in sql_query.upper():
         return log("sql_helper工具仅支持select语句", "error")
+    try:
+        # 解析SQL，识别出表名和字段名
+        parser = Parser(sql_query)
+        table_names = parser.tables
+        # log(f"表名是: {table_names}")
+        table_aliases = parser.tables_aliases
+        data = parser.columns_dict
+        if not data:
+            return log("sql解析无法获取字段或相关查询条件,无法分析", "error")
 
-    # 解析SQL，识别出表名和字段名
-    parser = Parser(sql_query)
-    table_names = parser.tables
-    # log(f"表名是: {table_names}")
-    table_aliases = parser.tables_aliases
-    data = parser.columns_dict
-    if not data:
-        return log("sql 解析失败,无法分析", "error")
-
-    select_fields = data.get("select", [])
-    join_fields = data.get("join", [])
-    where_fields = data.get("where", [])
-    # log(f"WHERE字段是：{where_fields}")
-    order_by_fields = data.get("order_by", [])
-    group_by_fields = data.get("group_by", [])
+        select_fields = data.get("select", [])
+        join_fields = data.get("join", [])
+        where_fields = data.get("where", [])
+        # log(f"WHERE字段是：{where_fields}")
+        order_by_fields = data.get("order_by", [])
+        group_by_fields = data.get("group_by", [])
+    except Exception as e:
+        return log("sql可能太复杂了,解析失败,请手动自查", "error")
 
     sql = f"EXPLAIN {sql_query}"
     try:
