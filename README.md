@@ -214,6 +214,9 @@ result
 - group(field:str)
   GROUP BY field
 
+- distinct(field:str)
+  SELECT DISTINCT field
+
 - field(fields: Any, exclude: bool = False)
   SELECT fields
   if `exclude`=True then select the fields of table (exlude:`fields`)

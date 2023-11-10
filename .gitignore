@@ -8,3 +8,4 @@ tests/__pycache__/
 think_sql/__pycache__/
 logs/
 tests/logs/
+__pycache__/

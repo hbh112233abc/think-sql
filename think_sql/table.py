@@ -37,6 +37,7 @@ class Table:
         self.limit_dict = {}
         self.order_by = ""
         self.group_by = ""
+        self.distinct_by = ""
         self.select_fields = ("*",)
         self.join_list = []
         # self.__fetch_sql = False
@@ -456,6 +457,18 @@ class Table:
             self.order_by += ",`{}` {}".format(field, sort)
         return self
 
+    def distinct(self, field: str):
+        """去重操作
+
+        Args:
+            field (str): 去重字段名
+
+        Returns:
+            self: 对象本身
+        """
+        self.distinct_by = "DISTINCT {}".format(field)
+        return self
+
     def group(self, field: str):
         """分组设置
 
@@ -502,8 +515,12 @@ class Table:
         Returns:
             tuple: 查询结果
         """
+        fields = ",".join(self.select_fields)
+        if self.distinct_by:
+            fields = self.distinct_by
+
         sql = "SELECT {select_fields} FROM {table} {join} WHERE {where}{group}{order}{limit}".format(
-            select_fields=",".join(self.select_fields),
+            select_fields=fields,
             table=self.table_name,
             join=" ".join(self.join_list),
             where=self.__condition_str_fix(),
