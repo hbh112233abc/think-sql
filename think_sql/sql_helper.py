@@ -16,7 +16,7 @@ from .database import DB
 logs = []
 
 
-def log(s: str = "", level: str = "log"):
+def log(s: str = "", level: str = "log") -> List[str]:
     global logs
     tpl = {
         "info": "\033[94m {} \033[0m",  # 蓝
@@ -29,6 +29,7 @@ def log(s: str = "", level: str = "log"):
     logs.append(s)
     s = tpl.get(level, "{}").format(s)
     print(s)
+    return logs
 
 
 def pretty_sql(sql: str):
@@ -214,7 +215,7 @@ def help(db: DB, sql_query: str, sample_size: int = 100000) -> List[str]:
     pretty_sql(sql_query)
 
     if "SELECT" not in sql_query.upper():
-        raise ValueError("sql_helper工具仅支持select语句")
+        return log("sql_helper工具仅支持select语句", "error")
 
     # 解析SQL，识别出表名和字段名
     parser = Parser(sql_query)
@@ -222,6 +223,9 @@ def help(db: DB, sql_query: str, sample_size: int = 100000) -> List[str]:
     # log(f"表名是: {table_names}")
     table_aliases = parser.tables_aliases
     data = parser.columns_dict
+    if not data:
+        return log("sql 解析失败,无法分析", "error")
+
     select_fields = data.get("select", [])
     join_fields = data.get("join", [])
     where_fields = data.get("where", [])
@@ -233,10 +237,9 @@ def help(db: DB, sql_query: str, sample_size: int = 100000) -> List[str]:
     try:
         explain_result = db.query(sql)
         if not explain_result:
-            log(f"Couldn't explain: {sql}", "warning")
-            return logs
+            return log(f"Couldn't explain: {sql}", "warning")
     except Exception as e:
-        raise RuntimeError("MySQL error:", e)
+        return log(f"Mysql explain failed: {e}", "error")
 
     # 提取列名
     e_column_names = list(explain_result[0].keys())

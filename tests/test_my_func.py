@@ -4,7 +4,7 @@ __author__ = "hbh112233abc@163.com"
 
 from memory_profiler import LineProfiler, show_results
 
-from my import func
+from .my import func
 
 
 def test_my_func():
