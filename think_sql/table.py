@@ -163,7 +163,7 @@ class Table:
         )
         return self.condition_str
 
-    def query(self, sql: str, params: list = []) -> list:
+    def query(self, sql: str, params: list = []) -> List[dict]:
         """查询操作(读操作)
 
         Args:
@@ -509,7 +509,7 @@ class Table:
         self.select_fields = fields
         return self
 
-    def select(self, build_sql: bool = False) -> list:
+    def select(self, build_sql: bool = False) -> List[dict]:
         """查询数据
 
         Returns:
