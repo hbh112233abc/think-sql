@@ -276,9 +276,9 @@ def help(db: DB, sql_query: str, sample_size: int = 100000) -> List[str]:
 
         for field in join_fields:
             table_field = field.split(".")
-            if len(table_field) == 2:
-                table_name = table_field[0]
-                field_name = table_field[1]
+            if len(table_field) > 1:
+                table_name = ".".join(table_field[:-1])
+                field_name = table_field[-1]
                 if table_name not in table_field_dict:
                     table_field_dict[table_name] = []
                 table_field_dict[table_name].append(field_name)
@@ -286,7 +286,7 @@ def help(db: DB, sql_query: str, sample_size: int = 100000) -> List[str]:
         for table_name, on_columns in table_field_dict.items():
             for on_column in on_columns:
                 show_index_sql = (
-                    f"show index from {table_name} where Column_name = '{on_column}'"
+                    f"show index from {table_name} where column_name = '{on_column}'"
                 )
                 index_result = db.query(show_index_sql)
                 if not index_result:
@@ -437,7 +437,7 @@ def help(db: DB, sql_query: str, sample_size: int = 100000) -> List[str]:
                     where_matching_fields = []
                     for field in where_fields:
                         if field.startswith(table_real_name + "."):
-                            where_matching_fields.append(field.split(".")[1])
+                            where_matching_fields.append(field.split(".")[-1])
                     # log(f"where_fields: {where_fields}")
                     # log(f"where_matching_fields: {where_matching_fields}")
                     for where_field in where_matching_fields:
@@ -459,7 +459,7 @@ def help(db: DB, sql_query: str, sample_size: int = 100000) -> List[str]:
                     group_matching_fields = []
                     for field in group_by_fields:
                         if field.startswith(table_real_name + "."):
-                            group_matching_fields.append(field.split(".")[1])
+                            group_matching_fields.append(field.split(".")[-1])
                     for group_field in group_matching_fields:
                         cardinality = count_column_value(
                             db,
@@ -479,7 +479,7 @@ def help(db: DB, sql_query: str, sample_size: int = 100000) -> List[str]:
                     order_matching_fields = []
                     for field in order_by_fields:
                         if field.startswith(table_real_name + "."):
-                            order_matching_fields.append(field.split(".")[1])
+                            order_matching_fields.append(field.split(".")[-1])
                     for order_field in order_matching_fields:
                         cardinality = count_column_value(
                             db,
