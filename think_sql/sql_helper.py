@@ -131,8 +131,24 @@ def count_column_value(
     '''
     field_list = db.table(table_name).limit(sample_size).column(field_name)
     distinct_fields = Counter(field_list).most_common(3)
-    table_info = db.query(f"SHOW TABLE STATUS WHERE Name='{table_name}';")
-    table_count = int(table_info[0]["Rows"])
+    try:
+        if "." in table_name:
+            database, table = table_name.split(".")
+            sql = f"""
+            SELECT TABLE_ROWS
+            FROM information_schema.tables
+            WHERE TABLE_NAME = "{table}"
+            AND TABLE_SCHEMA = "{database}"
+            AND TABLE_TYPE = "base table";
+            """
+            table_info = db.query(sql)
+            table_count = int(table_info[0]["TABLE_ROWS"])
+        else:
+            table_info = db.query(f"SHOW TABLE STATUS WHERE Name='{table_name}';")
+            table_count = int(table_info[0]["Rows"])
+    except Exception as e:
+        table_count = db.table(table_name).count()
+
     limit_count = min(table_count, sample_size) / 2
     result = list(filter(lambda x: x[1] >= limit_count, distinct_fields))
     return result

@@ -896,7 +896,7 @@ class Table:
 
         return Table.to_number(avg_value)
 
-    def count(self, field: str = "*") -> Union[str, int]:
+    def count(self, field: str = "1") -> Union[str, int]:
         """获取数据行数
 
         Args:
