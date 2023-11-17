@@ -680,6 +680,8 @@ class Table:
                 keys = ",".join(d.keys())
                 inputs += "(" + ",".join(["%s"] * len(d)) + "),"
                 params += tuple(d.values())
+        else:
+            raise TypeError("data must be dict or List[dict]")
 
         inputs = inputs[:-1]
         action = "REPLACE" if replace else "INSERT"

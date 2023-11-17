@@ -32,15 +32,6 @@ def log(s: str = "", level: str = "log") -> List[str]:
     return logs
 
 
-def pretty_sql(sql: str):
-    log("1) 输入的SQL语句是：")
-    log("-" * 100)
-    # 美化SQL
-    formatted_sql = sqlparse.format(sql, reindent=True, keyword_case="upper")
-    log(formatted_sql)
-    log("-" * 100)
-
-
 def has_table_alias(table_alias: dict) -> bool:
     """判断是否有表别名
 
@@ -224,11 +215,18 @@ def check_index_exist_multi(
     return index_result
 
 
-def help(db: DB, sql_query: str, sample_size: int = 100000) -> List[str]:
+def help(
+    db: DB, sql_query: str, tip: str = "输入的SQL语句", sample_size: int = 100000
+) -> List[str]:
     global logs
     logs = []
 
-    pretty_sql(sql_query)
+    log(f"1) {tip}")
+    log("-" * 100)
+    # 美化SQL
+    formatted_sql = sqlparse.format(sql, reindent=True, keyword_case="upper")
+    log(formatted_sql)
+    log("-" * 100)
 
     if "SELECT" not in sql_query.upper():
         return log("sql_helper工具仅支持select语句", "error")

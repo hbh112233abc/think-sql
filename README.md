@@ -323,6 +323,37 @@ result
   - `data` dict: insert one record; list: insert multiple records
   - `replace` bool if `replace` is True then use `REPLACE INTO`
 
+  _demo_
+  insert one record
+
+  ```python
+  db.table('table1').insert({'name':'test','score':100})
+  ```
+
+  ```sql
+  INSERT INTO table1 (`name`, `score`) VALUES ('test', 100)
+  ```
+
+  insert multiple records
+
+  ```python
+  db.table('table1').insert([{'name':'test','score':100},{'name':'test2','score':101}])
+  ```
+
+  ```sql
+  INSERT INTO table1 (`name`, `score`) VALUES ('test', 100), ('test2', 101)
+  ```
+
+  replace mode
+
+  ```python
+  db.table('table1').insert({'id':1,'name':'test','score':100},replace=True)
+  ```
+
+  ```sql
+  REPLACE INTO table1 (`id`, `name`, `score`) VALUES (1,'test', 100)
+  ```
+
 - update(data: dict, all_record: bool = False) -> int
   update data
 
