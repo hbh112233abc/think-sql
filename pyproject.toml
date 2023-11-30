@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "think-sql"
-version = "0.3.5"
+version = "0.3.6"
 description = "ThinkSQL link think-orm(ThinkPHP)"
 authors = [ "hbh112233abc <hbh112233abc@163.com>",]
 license = "MIT"
@@ -19,16 +19,16 @@ url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 default = true
 
 [tool.poetry.dependencies]
-python = ">=3.8,<=3.12"
-cacheout = "^0.13.1"
-PyMySQL = "^1.0.2"
-jsonpath = "^0.82"
-loguru = "^0.5.3"
-dill = "^0.3.4"
+python = ">=3.7,<=3.12"
+cacheout = "^0.15.0"
+jsonpath = "^0.82.2"
+loguru = "^0.7.2"
+dill = "^0.3.7"
 sqlparse = "^0.4.4"
 tabulate = "^0.9.0"
-sql-metadata = "^2.9.0"
-pydantic = "^2.4.2"
+sql-metadata = "^2.10.0"
+pydantic = "^2.5.2"
+pymysql = "^1.1.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
