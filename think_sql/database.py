@@ -44,7 +44,7 @@ class DB:
         self.params = params
 
         self.log = logger
-        self.conn = None
+        self.connector = None
         self.cursor = None
 
         self.connect()
@@ -54,7 +54,7 @@ class DB:
 
     def connect(self):
         """连接数据库"""
-        self.conn = pymysql.connect(
+        self.connector = pymysql.connect(
             host=self.config.host,
             port=int(self.config.port),
             user=self.config.username,
@@ -63,7 +63,7 @@ class DB:
             **self.params,
         )
         # SSCursor (流式游标) 解决 Python 使用 pymysql 查询大量数据导致内存使用过高的问题
-        self.cursor = self.conn.cursor(pymysql.cursors.SSDictCursor)
+        self.cursor = self.connector.cursor(pymysql.cursors.SSDictCursor)
 
     def execute(self, sql, params=()) -> int:
         try:
@@ -72,7 +72,7 @@ class DB:
             else:
                 sql = re.sub(r"(?<!%)%(?![%s])(?![%\(])", "%%", sql)
             result = self.cursor.execute(sql.strip(), params)
-            self.connect.commit()
+            self.connector.commit()
             return result
         except Exception as e:
             self.log.warning(sql)
@@ -110,13 +110,13 @@ class DB:
             if self.cursor._executed:
                 self.log.info(f"[sql]({self.config.database}) {self.cursor._executed}")
             self.log.exception(exc_value)
-            self.conn.rollback()
+            self.connector.rollback()
         else:
-            self.conn.commit()
+            self.connector.commit()
         if self.cursor:
             self.cursor.close()
-        if self.conn:
-            self.conn.close()
+        if self.connector:
+            self.connector.close()
 
     def table(self, table_name=""):
         """生成对应数据表
@@ -129,7 +129,7 @@ class DB:
         """
         if not self.check_connected():
             self.connect()
-        return Table(self.conn, self.cursor, table_name, True)
+        return Table(self.connector, self.cursor, table_name, True)
 
     def check_connected(self):
         """检查mysql是否可用连接
@@ -144,7 +144,7 @@ class DB:
             bool -- 连接是否可用
         """
         try:
-            self.conn.ping(True)
+            self.connector.ping(True)
             return True
         except Exception as e:
             self.log.exception(e)
