@@ -3,8 +3,9 @@
 __author__ = "hbh112233abc@163.com"
 
 from collections import Counter
+import re
 import textwrap
-from typing import Any, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 import sqlparse
 from tabulate import tabulate
@@ -61,7 +62,11 @@ def has_table_alias(table_alias: dict) -> bool:
 
 
 def count_column_value(
-    db: DB, table_name: str, field_name: str, sample_size: int
+    db: DB,
+    table_name: str,
+    field_name: str,
+    sample_size: int,
+    where_condition: str = "1=1",
 ) -> List[Tuple[Any, int]]:
     """取列阈值
     <sample_size 取(SELECT COUNT(*) FROM {table_name}) / 2
@@ -72,6 +77,7 @@ def count_column_value(
         table_name (str): name of the table
         field_name (str): name of the field
         sample_size (int): number of samples
+        where_condition (str): where condition
 
     Returns:
         List[Tuple[Any, int]]: count result
@@ -120,7 +126,12 @@ def count_column_value(
     """
     result = db.query(sql)
     '''
-    field_list = db.table(table_name).limit(sample_size).column(field_name)
+    field_list = (
+        db.table(table_name)
+        .where(where_condition)
+        .limit(sample_size)
+        .column(field_name)
+    )
     distinct_fields = Counter(field_list).most_common(3)
     try:
         if "." in table_name:
@@ -215,6 +226,88 @@ def check_index_exist_multi(
     return index_result
 
 
+def parse_where_condition(sql: str) -> Dict[str, str]:
+    """解析查询条件,返回{"字段":"条件语句"}
+
+    Args:
+        sql (str): 查询语句
+
+    Returns:
+        Dict[str, str]: 返回结果{"字段":"条件语句"}
+    """
+    parsed = sqlparse.parse(sql)
+    stmt = parsed[0]
+
+    result = {}
+
+    for token in stmt.tokens:
+        if not isinstance(token, sqlparse.sql.Where):
+            continue
+        field = ""
+        for cond_token in token.tokens:
+            if isinstance(cond_token, sqlparse.sql.Comparison):
+                left_token = cond_token.left.value.strip()
+                result[left_token] = cond_token.value.strip()
+                continue
+
+            if isinstance(cond_token, sqlparse.sql.Identifier):
+                field = cond_token.value.strip()
+                result[field] = ""
+
+            if not field:
+                continue
+
+            if isinstance(
+                cond_token, sqlparse.sql.Token
+            ) and cond_token.value.upper() in ["OR", "AND"]:
+                field = ""
+                break
+
+            if isinstance(cond_token, sqlparse.sql.Parenthesis):
+                field = ""
+                break
+
+            result[field] += cond_token.value.strip()
+
+    return result
+
+
+def suggestion(where_clauses: Dict[str, str]):
+    if not where_clauses:
+        return
+    log()
+    log("4) 额外的建议：")
+    log("-" * 100)
+
+    like_pattern = r"like\s+['\"]%|like\s+concat\(['\"]%|regexp\s+"
+    func_pattern = r"\b(\w+(\(.*\).*[>=<!=<>]))"
+
+    like_r = []
+    func_r = []
+
+    for _, condition in where_clauses.items():
+        if re.findall(like_pattern, condition, re.IGNORECASE):
+            pattern = r"like\s+(?:concat\(.*?\)|'%%'|[\'\"]%.*?[\'\"])|regexp\s+[\'\"].*?[\'\"]"
+            like_match = re.search(pattern, condition, re.IGNORECASE)
+            if like_match:
+                like_r.append(like_match.group())
+
+        func_match = re.findall(func_pattern, condition, re.IGNORECASE)
+        if func_match:
+            func_r.append(",".join([m[0] for m in func_match]))
+
+    if like_r:
+        log(
+            f"like模糊匹配，百分号在首位，【{','.join(like_r)}】是不能用到索引的，例如like '%张三%'，可以考虑改成like '张三%'，这样是可以用到索引的，如果业务上不能改，可以考虑用全文索引。"
+        )
+
+    if func_r:
+        log(
+            f"索引列使用了函数作计算：【{','.join(func_r)}】，会导致索引失效。"
+            f"如果你是MySQL 8.0可以考虑创建函数索引；如果你是MySQL 5.7，你要更改你的SQL逻辑了。"
+        )
+
+
 def help(
     db: DB, sql_query: str, tip: str = "输入的SQL语句", sample_size: int = 100000
 ) -> List[str]:
@@ -224,7 +317,7 @@ def help(
     log(f"1) {tip}")
     log("-" * 100)
     # 美化SQL
-    formatted_sql = sqlparse.format(sql, reindent=True, keyword_case="upper")
+    formatted_sql = sqlparse.format(sql_query, reindent=True, keyword_case="upper")
     log(formatted_sql)
     log("-" * 100)
 
@@ -319,6 +412,8 @@ def help(
 
     table_aliases_exists = has_table_alias(table_aliases)
 
+    where_clauses = parse_where_condition(formatted_sql)
+
     # 解析执行计划，查找需要加索引的字段
     for row in explain_result:
         # 获取查询语句涉及的表和字段信息
@@ -333,9 +428,24 @@ def help(
             if not table_aliases_exists and not contains_dot:
                 if len(where_fields) != 0:
                     for where_field in where_fields:
-                        cardinality = count_column_value(
-                            db, table_name, where_field, sample_size
-                        )
+                        if where_field in where_clauses:
+                            where_clause_value = (
+                                where_clauses[where_field]
+                                .replace("\n", "")
+                                .replace("\r", "")
+                            )
+                            where_clause_value = re.sub(r"\s+", " ", where_clause_value)
+                            cardinality = count_column_value(
+                                db,
+                                table_name,
+                                where_field,
+                                sample_size,
+                                where_clause_value,
+                            )
+                        else:
+                            cardinality = count_column_value(
+                                db, table_name, where_field, sample_size
+                            )
                         # log(f"cardinality: {cardinality}")
                         if cardinality:
                             count_value = cardinality[0][1]
@@ -392,7 +502,7 @@ def help(
                     )
                     if not index_result:
                         if row["key"] is None or (
-                            isinstance(row["rows"], int) and row["rows"] >= 1000
+                            isinstance(row["rows"], int) and row["rows"] >= 1
                         ):
                             log(
                                 f"建议添加索引：ALTER TABLE {table_name} ADD INDEX idx_{index_name}({index_columns});",
@@ -421,7 +531,7 @@ def help(
                     )
                     if not index_result_list:
                         if row["key"] is None or (
-                            isinstance(row["rows"], int) and row["rows"] >= 1000
+                            isinstance(row["rows"], int) and row["rows"] >= 1
                         ):
                             log(
                                 f"建议添加索引：ALTER TABLE {table_name} ADD INDEX idx_{merged_name}({merged_columns});",
@@ -530,7 +640,7 @@ def help(
                     )
                     if not index_result:
                         if row["key"] is None or (
-                            isinstance(row["rows"], int) and row["rows"] >= 1000
+                            isinstance(row["rows"], int) and row["rows"] >= 1
                         ):
                             log(
                                 f"建议添加索引：ALTER TABLE {table_real_name} ADD INDEX idx_{index_name}({index_columns});",
@@ -559,7 +669,7 @@ def help(
                     )
                     if not index_result_list:
                         if row["key"] is None or (
-                            isinstance(row["rows"], int) and row["rows"] >= 1000
+                            isinstance(row["rows"], int) and row["rows"] >= 1
                         ):
                             log(
                                 f"建议添加索引：ALTER TABLE {table_real_name} ADD INDEX idx_{merged_name}({merged_columns});",
@@ -577,5 +687,7 @@ def help(
                         index_columns=merged_columns,
                     )
                     log(index_static)
+
+    suggestion(where_clauses)
 
     return logs

@@ -4,22 +4,14 @@ __author__ = "hbh112233abc@163.com"
 
 
 import re
+import contextlib
 from typing import List, Union
-import pymysql
 
+import pymysql
 from loguru import logger
 
 from .util import DBConfig
-
 from .table import Table
-
-config = {
-    "host": "127.0.0.1",
-    "port": 3306,
-    "username": "root",
-    "password": "root",
-    "database": "test",
-}
 
 
 class DB:
@@ -39,18 +31,50 @@ class DB:
         elif isinstance(config, dict):
             config = DBConfig.model_validate(config)
         if not isinstance(config, DBConfig):
-            raise ValueError("Invalid database config")
+            raise ValueError(
+                """
+                Invalid database config
+                Right config ex1:
+                  DB({"host": "127.0.0.1","port": 3306,"username": "root","password": "password","database": "test"})
+                Right config ex2:
+                  DB("root:'password'@127.0.0.1:3306/test")
+                Right config ex3:
+                  from think_sql.util import DBConfig
+                  cfg = DBConfig(host="127.0.0.1", port=3306, username="root", password="password",database="test")
+                  DB(cfg)
+                """
+            )
         self.config = config
         self.params = params
 
         self.log = logger
         self.connector = None
         self.cursor = None
+        self.auto_commit = True
 
         self.connect()
 
     def __repr__(self):
         return f"<class 'think_sql.database.DB' database={self.database}>"
+
+    @contextlib.contextmanager
+    def start_trans(self):
+        """开始事务"""
+        self.auto_commit = False
+        try:
+            self.connector.begin()
+            yield
+            self.connector.commit()
+        except Exception as e:
+            logger.error(e)
+            self.connector.rollback()
+        finally:
+            self.auto_commit = True
+
+    def close(self):
+        """关闭数据库连接"""
+        self.cursor.close()
+        self.connector.close()
 
     def connect(self):
         """连接数据库"""
@@ -72,7 +96,8 @@ class DB:
             else:
                 sql = re.sub(r"(?<!%)%(?![%s])(?![%\(])", "%%", sql)
             result = self.cursor.execute(sql.strip(), params)
-            self.connector.commit()
+            if self.auto_commit:
+                self.connector.commit()
             return result
         except Exception as e:
             self.log.warning(sql)

@@ -454,7 +454,29 @@ result
   update `user` set score = 90 where id = 4;
   ```
 
+#### support transaction
+
+```python
+from think_sql.database import DB
+db_dsn = "root:'password'@127.0.0.1:3306/database"
+with DB(db_dsn) as db:
+    # result: insert two records into database
+    with db.start_trans():
+        db.table('user').insert({'name':'think_sql1','score':98})
+        db.table('user').insert({'name':'think_sql2','score':99})
+    # result: nothing inserted
+    with db.start_trans():
+        db.table('user').insert({'name':'think_sql1','score':98})
+        db.table('user').insert({'name':'think_sql2','score':99})
+        raise Exception('error')
+
+    # The above operation does not affect subsequent operations.
+    db.table('user').insert({'name':'think_sql3','score':100})
+```
+
 #### sql_helper
+
+> [Ref:hcymysql/sql_helper](https://github.com/hcymysql/sql_helper)
 
 ```python
 from think_sql.database import DB
