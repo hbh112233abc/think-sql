@@ -344,7 +344,8 @@ def help(
 
     sql = f"EXPLAIN {sql_query}"
     try:
-        explain_result = db.query(sql)
+        db.cursor.execute(sql)
+        explain_result = db.cursor.fetchall()
         if not explain_result:
             return log(f"Couldn't explain: {sql}", "warning")
     except Exception as e:
