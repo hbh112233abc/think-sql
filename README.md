@@ -509,6 +509,36 @@ WHERE finished_count > 0
  【hy_cabrecs】 表，无需添加任何索引。
 ```
 
+#### parse
+
+- parse alter sql
+
+  ```python
+  from think_sql import parse
+  sql = """
+    alter     table
+    slow_log_test
+    add
+    iii int not null default 0  comment   'a';
+  """
+
+  print(parse.alter_sql(sql))
+  ```
+
+  result:
+
+  ```json
+  {
+    "table": "slow_log_test",
+    "field": "iii",
+    "field_type": "int",
+    "is_null": "NOT NULL",
+    "default": "0",
+    "comment": "'a'",
+    "after": ""
+  }
+  ```
+
 ## Development
 
 ### poetry 包管理器
