@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 __author__ = "hbh112233abc@163.com"
 
+import sql_metadata
 import sqlparse
 
 
@@ -48,9 +49,15 @@ def alter_sql(alter_sql: str) -> dict:
                 "add",
                 "modify",
             ):
-                res["field"] = sql.tokens[i + 2].value
-                res["field_type"] = sql.tokens[i + 4].value
-                res["is_null"] = sql.tokens[i + 6].value
+                offset = 0
+                if (
+                    sql.tokens[i + 2].is_keyword
+                    and sql.tokens[i + 2].value.lower() == "column"
+                ):
+                    offset = 2
+                res["field"] = sql.tokens[i + offset + 2].value
+                res["field_type"] = sql.tokens[i + offset + 4].value
+                res["is_null"] = sql.tokens[i + offset + 6].value
                 continue
             if key == "default":
                 res["default"] = sql.tokens[i + 2].value
@@ -58,7 +65,7 @@ def alter_sql(alter_sql: str) -> dict:
                     res["default"] = ""
                 continue
             if key == "comment":
-                res["comment"] = sql.tokens[i + 2].value
+                res["comment"] = sql.tokens[i + 2].value.replace("'", "")
                 continue
             if key == "after":
                 res["after"] = sql.tokens[i + 2].value
@@ -67,12 +74,27 @@ def alter_sql(alter_sql: str) -> dict:
     return res
 
 
-if __name__ == "__main__":
-    sql = """
-    alter     table
-    slow_log_test
-    add
-    iii int not null default 0  comment   'a';
-    """
+def select_sql(sql) -> dict:
+    """解析select语句
 
-    print(alter_sql(sql))
+    Args:
+        sql (str): select sql
+
+    Returns:
+        dict: {"table":[],"select":[],"join":[],"where":[],"order_by":[],"group_by":[]}
+    """
+    sql = sqlparse.format(sql, reindent=True, keyword_case="upper")
+    parser = sql_metadata.Parser(sql)
+    table_names = parser.tables
+    data = parser.columns_dict
+    res = {
+        "table": [],
+        "select": [],
+        "join": [],
+        "where": [],
+        "order_by": [],
+        "group_by": [],
+    }
+    data["table"] = table_names
+    res.update(data)
+    return res
