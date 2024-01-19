@@ -316,7 +316,7 @@ class Table:
             check_value = False
         elif symbol == "" and value is None:
             # field 原生sql
-            pass
+            check_value = False
         else:
             if value is None:
                 value = symbol

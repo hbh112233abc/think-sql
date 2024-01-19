@@ -419,6 +419,8 @@ def help(
     for row in explain_result:
         # 获取查询语句涉及的表和字段信息
         table_name = row["table"]
+        if table_name.startswith("<") and table_name.endswith(">"):
+            continue
         add_index_fields = []
         # 判断是否需要加索引的条件
         if (row["type"] == "ALL" and row["key"] is None) or (
