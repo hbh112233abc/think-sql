@@ -2,17 +2,16 @@
 # -*- coding: utf-8 -*-
 __author__ = "hbh112233abc@163.com"
 
-from collections import Counter
 import re
 import textwrap
+from collections import Counter
 from typing import Any, Dict, List, Tuple
 
 import sqlparse
 from tabulate import tabulate
-from loguru import logger
 from sql_metadata import Parser
 
-from .database import DB
+from think_sql.mysql.db import DB
 
 logs = []
 

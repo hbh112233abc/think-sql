@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 __author__ = "hbh112233abc@163.com"
 
-from think_sql.database import DB
-from think_sql.sql_helper import *
+from think_sql.mysql.db import DB
+from think_sql.mysql.sql_helper import *
 
 
 def test_sql_helper():

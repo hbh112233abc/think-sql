@@ -4,7 +4,7 @@ __author__ = "hbh112233abc@163.com"
 
 from pprint import pprint
 from sql_metadata import Parser
-from think_sql import parse
+from think_sql.mysql import parse
 
 
 def test_alter_sql():

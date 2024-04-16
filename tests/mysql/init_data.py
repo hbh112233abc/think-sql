@@ -1,7 +1,7 @@
 
 from faker import Faker
 
-from think_sql.database import DB
+from think_sql.mysql.db import DB
 
 config = {
     'database': 'test',

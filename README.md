@@ -1,9 +1,22 @@
 # ThinkSQL 类似 ThinkPHP 的数据库引擎
 
+## Drivers
+
+- [x] MySQL
+- [x] 达梦(DM8)
+
 ## Install
 
+- use mysql
+
 ```
-pip install think-sql
+pip install think-sql[mysql]
+```
+
+- use 达梦(DM8)
+
+```
+pip install think-sql[dm]
 ```
 
 ## How to use
@@ -15,9 +28,10 @@ pip install think-sql
 - example dict params
 
 ```python
-from think_sql.database import DB
+from think_sql import DB
 
 config = {
+    'driver': 'mysql',
     'host': '127.0.0.1',
     'port': 3306,
     'username': 'root',

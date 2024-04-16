@@ -5,8 +5,8 @@ __author__ = "hbh112233abc@163.com"
 import time
 
 from line_profiler import LineProfiler
-from think_sql.database import DB
-from think_sql.sql_helper import count_column_value
+from think_sql.mysql.db import DB
+from think_sql.mysql.sql_helper import count_column_value
 
 
 def old_count_column_value(db, table_name, field_name, sample_size):

@@ -1,5 +1,5 @@
 from think_sql import __version__
-from think_sql.database import DB
+from think_sql.mysql.db import DB
 
 
 def test_version():

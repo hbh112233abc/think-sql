@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "think-sql"
-version = "0.5.1"
+version = "0.6.0"
 description = "ThinkSQL link think-orm(ThinkPHP)"
 authors = [ "hbh112233abc <hbh112233abc@163.com>",]
 license = "MIT"
@@ -12,23 +12,31 @@ readme = "README.md"
 homepage = "https://github.com/hbh112233abc/think-sql"
 repository = "https://github.com/hbh112233abc/think-sql"
 documentation = "https://github.com/hbh112233abc/think-sql"
-keywords = [ "sql", "database", "table", "think-orm", "ThinkPHP",]
+keywords = [ "sql", "think-sql", "DB", "Table", "mysql","达梦"]
 [[tool.poetry.source]]
 name = "pypi.tuna.tsinghua.edu.cn"
 url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 default = true
 
 [tool.poetry.dependencies]
-python = ">=3.7,<=3.12"
+python = ">=3.8,<4.0"
 cacheout = "^0.15.0"
 jsonpath = "^0.82.2"
 loguru = "^0.7.2"
 dill = "^0.3.7"
-sqlparse = "^0.4.4"
-tabulate = "^0.9.0"
-sql-metadata = "^2.10.0"
 pydantic = "^2.5.2"
-pymysql = "^1.1.0"
+redis = "^5.0.3"
+
+[tool.poetry.optional-dependencies]
+mysql = [
+    "pymysql = ^1.1.0",
+    "sql-metadata = ^2.10.0",
+    "tabulate = ^0.9.0",
+    "sqlparse = ^0.4.4"
+]
+dameng = [
+    "dmpython = ^2.5.5",
+]
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"

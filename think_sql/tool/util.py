@@ -3,7 +3,7 @@
 __author__ = "hbh112233abc@163.com"
 
 import re
-from typing import Optional
+from typing import Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -51,3 +51,54 @@ class DBConfig(BaseModel):
         config = match.groupdict()
         dbc = DBConfig.model_validate(config)
         return dbc
+
+def db_config(config:Union[str,dict,DBConfig])->DBConfig:
+    if isinstance(config, str):
+        config = DBConfig.parse_dsn(config)
+    elif isinstance(config, dict):
+        config = DBConfig.model_validate(config)
+    if not isinstance(config, DBConfig):
+        raise ValueError(
+            """
+            Invalid database config
+            Right config ex1:
+                DB({"host": "127.0.0.1","port": 3306,"username": "root","password": "password","database": "test"})
+            Right config ex2:
+                DB("root:'password'@127.0.0.1:3306/test")
+            Right config ex3:
+                from think_sql.util import DBConfig
+                cfg = DBConfig(host="127.0.0.1", port=3306, username="root", password="password",database="test")
+                DB(cfg)
+            """
+        )
+    return config
+
+def to_number(s: Union[str, int, float], key: str = ""):
+    """转换为数值
+
+    Args:
+        s (Union[str, int, float]): 字符串或数字
+        key (str, optional): 键名. Defaults to ''.
+
+    Raises:
+        ValueError: 错误内容
+
+    Returns:
+        [int,float]: 转换后的数值
+    """
+    if isinstance(s, (int, float)):
+        return s
+
+    if isinstance(s, str):
+        s = s.strip()
+        if re.match(r"^\d+$", s):
+            s = int(s)
+            return s
+        if re.match(r"^\d+\.\d+$", s):
+            s = float(s)
+            return s
+
+    if not isinstance(s, (int, float)) and key:
+        raise ValueError(f"`{key}` must number")
+
+    return s

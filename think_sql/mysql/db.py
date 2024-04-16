@@ -10,11 +10,14 @@ from typing import List, Union
 import pymysql
 from loguru import logger
 
-from .util import DBConfig
-from .table import Table
+from think_sql.tool.util import DBConfig
+from think_sql.tool.base import Database
+from think_sql.tool.interface import DatabaseInterface
+
+from think_sql.mysql.table import Table
 
 
-class DB:
+class DB(DatabaseInterface,Database):
     def __init__(
         self,
         config: Union[str, dict, DBConfig],
@@ -26,36 +29,10 @@ class DB:
             config: str|dict|DBConfig 数据库连接配置
             params: dict 数据库连接参数
         """
-        if isinstance(config, str):
-            config = DBConfig.parse_dsn(config)
-        elif isinstance(config, dict):
-            config = DBConfig.model_validate(config)
-        if not isinstance(config, DBConfig):
-            raise ValueError(
-                """
-                Invalid database config
-                Right config ex1:
-                  DB({"host": "127.0.0.1","port": 3306,"username": "root","password": "password","database": "test"})
-                Right config ex2:
-                  DB("root:'password'@127.0.0.1:3306/test")
-                Right config ex3:
-                  from think_sql.util import DBConfig
-                  cfg = DBConfig(host="127.0.0.1", port=3306, username="root", password="password",database="test")
-                  DB(cfg)
-                """
-            )
-        self.config = config
-        self.params = params
-
-        self.log = logger
-        self.connector = None
-        self.cursor = None
-        self.auto_commit = True
-
-        self.connect()
+        super().__init__(config,params)
 
     def __repr__(self):
-        return f"<class 'think_sql.database.DB' database={self.database}>"
+        return f"<class 'think_sql.mysql.DB' uri={self.config.host}:{self.config.port} database={self.database}>"
 
     @contextlib.contextmanager
     def start_trans(self):
@@ -89,13 +66,9 @@ class DB:
         # SSCursor (流式游标) 解决 Python 使用 pymysql 查询大量数据导致内存使用过高的问题
         self.cursor = self.connector.cursor(pymysql.cursors.SSDictCursor)
 
-    def execute(self, sql, params=()) -> int:
+    def execute(self, sql:str, params:tuple=()) -> int:
         try:
-            if not params:
-                sql = sql.replace("%", "%%")
-            else:
-                sql = re.sub(r"(?<!%)%(?![%s])(?![%\(])", "%%", sql)
-            result = self.cursor.execute(sql.strip(), params)
+            result = self.exec(sql,params)
             if self.auto_commit:
                 self.connector.commit()
             return result
@@ -104,14 +77,17 @@ class DB:
             logger.exception(e)
             return 0
 
-    def query(self, sql, params=()) -> List[dict]:
+    def exec(self, sql:str, params:tuple=())->int:
+        if not params:
+            sql = sql.replace("%", "%%")
+        else:
+            sql = re.sub(r"(?<!%)%(?![%s])(?![%\(])", "%%", sql)
+        return self.cursor.execute(sql.strip(), params)
+
+    def query(self, sql:str, params:tuple=()) -> List[dict]:
         result = []
         try:
-            if not params:
-                sql = sql.replace("%", "%%")
-            else:
-                sql = re.sub(r"(?<!%)%(?![%s])(?![%\(])", "%%", sql)
-            self.cursor.execute(sql.strip(), params)
+            self.exec(sql,params)
             if self.cursor.rowcount > 0:
                 result = self.cursor.fetchall()
         except Exception as e:
@@ -119,29 +95,14 @@ class DB:
             self.log.exception(e)
         return result
 
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_value, trace):
-        """退出操作
-        如果return True可以阻止异常传播
-
-        Args:
-            exc_type (object): 异常类型,默认为None
-            exc_value (object): 异常值,默认为None
-            trace (traceback object): 异常位置,默认为None
-        """
-        if exc_value is not None:
-            if self.cursor._executed:
-                self.log.info(f"[sql]({self.config.database}) {self.cursor._executed}")
-            self.log.exception(exc_value)
+    def error(self,err):
+        if self.cursor._executed:
+            self.log.info(f"[sql]({self.config.database}) {self.cursor._executed}")
             self.connector.rollback()
-        else:
-            self.connector.commit()
-        if self.cursor:
-            self.cursor.close()
-        if self.connector:
-            self.connector.close()
+        self.log.exception(err)
+
+    def success(self):
+        self.connector.commit()
 
     def table(self, table_name=""):
         """生成对应数据表
@@ -154,7 +115,7 @@ class DB:
         """
         if not self.check_connected():
             self.connect()
-        return Table(self.connector, self.cursor, table_name, True)
+        return Table(self, table_name)
 
     def check_connected(self):
         """检查mysql是否可用连接
