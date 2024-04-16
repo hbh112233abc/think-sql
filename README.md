@@ -48,7 +48,7 @@ with DB(config) as db:
 - example dsn str
 
 ```python
-from think_sql.database import DB
+from think_sql import DB
 
 with DB("root:'root'@127.0.0.1:3306/test") as db:
     data = db.table('user').where('id',1).find()
@@ -59,8 +59,8 @@ with DB("root:'root'@127.0.0.1:3306/test") as db:
 - example DBConfig
 
 ```python
-from think_sql.database import DB
-from think_sql.util import DBConfig
+from think_sql import DB
+from think_sql.tool.util import DBConfig
 config = DBConfig(
   host='127.0.0.1',
   port=3306,
@@ -87,7 +87,7 @@ result
 
 ### 2. Introduction
 
-#### think_sql.database.DB
+#### DB
 
 - **init**(config:Union[str,dict,DBConfig],params={})
 
@@ -114,7 +114,7 @@ result
 - execute(sql,params=())
   execute sql write operate(ex:insert,update,delete,...)
 
-#### think_sql.table.Table
+#### Table
 
 - **init**(connector: Connection,cursor: Cursor,table_name: str,debug: bool = True)
 
@@ -471,7 +471,7 @@ result
 #### support transaction
 
 ```python
-from think_sql.database import DB
+from think_sql import DB
 db_dsn = "root:'password'@127.0.0.1:3306/database"
 with DB(db_dsn) as db:
     # result: insert two records into database
@@ -488,13 +488,13 @@ with DB(db_dsn) as db:
     db.table('user').insert({'name':'think_sql3','score':100})
 ```
 
-#### sql_helper
+#### sql_helper for mysql
 
 > [Ref:hcymysql/sql_helper](https://github.com/hcymysql/sql_helper)
 
 ```python
-from think_sql.database import DB
-from think_sql.sql_helper import help
+from think_sql import DB
+from think_sql.mysql.sql_helper import help
 
 db_dsn = "root:'password'@127.0.0.1:3306/database"
 with DB(db_dsn) as db:
@@ -523,12 +523,12 @@ WHERE finished_count > 0
  【hy_cabrecs】 表，无需添加任何索引。
 ```
 
-#### parse
+#### parse for mysql
 
 - parse alter sql
 
   ```python
-  from think_sql import parse
+  from think_sql.mysql import parse
   sql = """
     alter     table
     slow_log_test
