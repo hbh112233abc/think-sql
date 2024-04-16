@@ -34,7 +34,7 @@ config = {
     'driver': 'mysql',
     'host': '127.0.0.1',
     'port': 3306,
-    'username': 'root',
+    'user': 'root',
     'password': 'root',
     'database': 'test',
 }
@@ -64,7 +64,7 @@ from think_sql.tool.util import DBConfig
 config = DBConfig(
   host='127.0.0.1',
   port=3306,
-  username='root',
+  user='root',
   password='root',
   database='test',
 )
@@ -94,9 +94,9 @@ result
   init database, return DB instance
 
   - config:Union[str,dict,DBConfig]
-    - str: `username:'password'@host:port/database`
-    - dict: `{'host':'127.0.0.1','port':3306,'username':'root','password':'root','database':'test'}`
-    - DBConfig: `DBConfig(host='127.0.0.1',port=3306,username='root',password='root',database='test')`
+    - str: `user:'password'@host:port/database`
+    - dict: `{'host':'127.0.0.1','port':3306,'user':'root','password':'root','database':'test'}`
+    - DBConfig: `DBConfig(host='127.0.0.1',port=3306,user='root',password='root',database='test')`
   - params:dict pymysql connect other params
 
 - connect()

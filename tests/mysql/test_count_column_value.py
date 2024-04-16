@@ -34,7 +34,7 @@ def test_count_column_value():
         "database": "cab100151",
         "host": "192.168.102.154",
         "port": 3306,
-        "username": "root",
+        "user": "root",
         "password": "xmhymake",
     }
     with DB(cfg) as db:
@@ -58,7 +58,7 @@ def test_line_profile():
         "database": "cab100151",
         "host": "192.168.102.154",
         "port": 3306,
-        "username": "root",
+        "user": "root",
         "password": "xmhymake",
     }
     db = DB(cfg)
@@ -77,7 +77,7 @@ def test_memory_profile():
         "database": "cab100151",
         "host": "192.168.102.154",
         "port": 3306,
-        "username": "root",
+        "user": "root",
         "password": "xmhymake",
     }
     db = DB(cfg)

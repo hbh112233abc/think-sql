@@ -54,7 +54,7 @@ def db():
     db_config = DBConfig(
         host="localhost",
         port=3306,
-        username="root",
+        user="root",
         password="root",
         database="test"
     )

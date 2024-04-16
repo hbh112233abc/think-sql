@@ -58,7 +58,7 @@ class DB(DatabaseInterface,Database):
         self.connector = pymysql.connect(
             host=self.config.host,
             port=int(self.config.port),
-            user=self.config.username,
+            user=self.config.user,
             password=self.config.password,
             database=self.config.database,
             **self.params,

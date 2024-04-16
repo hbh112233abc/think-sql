@@ -16,11 +16,11 @@ class DBConfig(BaseModel):
     port: int = Field(
         default=3306, description="Port of the database,default is `3306`"
     )
-    username: str = Field(
-        default="root", description="Username of the database,default is `root`"
+    user: str = Field(
+        default="root", description="User of the database,default is `root`"
     )
     password: str = Field(
-        default="root", description="Password of the Username,default is `root`"
+        default="root", description="Password of the User,default is `root`"
     )
     database: Optional[str] = Field(default="", description="Database selected")
 
@@ -29,24 +29,24 @@ class DBConfig(BaseModel):
         """
         Parse a database configuration string into a dictionary.
 
-        :param cfg: A string in the format "username:'password'@host:port/database"
-        :return: A dictionary with keys 'username', 'password', 'host', 'port', and 'database'
+        :param cfg: A string in the format "user:'password'@host:port/database"
+        :return: A dictionary with keys 'user', 'password', 'host', 'port', and 'database'
         :raises ValueError: If the input string does not match the expected format
 
         :return
         {
             "host":"",
             "port":3306,
-            "username":"",
+            "user":"",
             "password":"",
             "database":"",
         }
         """
-        pattern = r"(?P<username>.*?):'(?P<password>.*?)'@(?P<host>.*?):(?P<port>\d+)(/(?P<database>.*))?"
+        pattern = r"(?P<user>.*?):'(?P<password>.*?)'@(?P<host>.*?):(?P<port>\d+)(/(?P<database>.*))?"
         match = re.match(pattern, dsn)
         if not match:
             raise ValueError(
-                "Invalid db config format, expected `username:'password'@host:port/database`"
+                "Invalid db config format, expected `user:'password'@host:port/database`"
             )
         config = match.groupdict()
         dbc = DBConfig.model_validate(config)
@@ -62,12 +62,12 @@ def db_config(config:Union[str,dict,DBConfig])->DBConfig:
             """
             Invalid database config
             Right config ex1:
-                DB({"host": "127.0.0.1","port": 3306,"username": "root","password": "password","database": "test"})
+                DB({"host": "127.0.0.1","port": 3306,"user": "root","password": "password","database": "test"})
             Right config ex2:
                 DB("root:'password'@127.0.0.1:3306/test")
             Right config ex3:
                 from think_sql.util import DBConfig
-                cfg = DBConfig(host="127.0.0.1", port=3306, username="root", password="password",database="test")
+                cfg = DBConfig(host="127.0.0.1", port=3306, user="root", password="password",database="test")
                 DB(cfg)
             """
         )

@@ -50,7 +50,7 @@ def db():
     db_config = DBConfig(
         host="localhost",
         port=5236,
-        username="SYSDBA",
+        user="SYSDBA",
         password="SYSDBA",
         database="DMHR"
     )

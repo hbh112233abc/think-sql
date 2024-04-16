@@ -11,7 +11,7 @@ def test_mysql_db():
     cfg = {
         'host': '127.0.0.1',
         'port': 3306,
-        'username': 'root',
+        'user': 'root',
         'password': 'root',
         'database': 'test'
     }
@@ -26,7 +26,7 @@ def test_dm_db():
         'type': 'dm',
         'host': 'localhost',
         'port': 5236,
-        'username': 'SYSDBA',
+        'user': 'SYSDBA',
         'password': 'SYSDBA',
         'database': 'DMHR'
     }
@@ -40,7 +40,7 @@ def test_error_type():
         'type': 'error',
         'host': '127.0.0.1',
         'port': 3306,
-        'username': 'root',
+        'user': 'root',
         'password': 'root',
         'database': 'test'
     }
