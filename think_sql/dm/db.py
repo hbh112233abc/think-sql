@@ -64,7 +64,7 @@ class DB(DatabaseInterface,Database):
         self.connector = dmPython.connect(
             host=self.config.host,
             port=int(self.config.port),
-            user=self.config.name,
+            user=self.config.user,
             password=self.config.password,
             local_code=dmPython.PG_UTF8,
             cursorclass=dmPython.DictCursor,

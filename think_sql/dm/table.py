@@ -566,6 +566,8 @@ class Table(TableBase,TableInterface):
                 table_name = f"{self.schema}.{table_name}"
             table_name = parse_key(table_name)
             as_name = parse_key(as_name)
+            on1,on2 = on.split('=')
+            on = f"{parse_key(on1)} = {parse_key(on2)}"
             join_str = f"{join} JOIN {table_name} AS {as_name} ON {on}"
             if and_str:
                 join_str += f" AND {and_str}"

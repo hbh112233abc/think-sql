@@ -26,7 +26,7 @@ def parse_key(key, strict:bool=False)->str:
     key = key.strip()
     table = ""
     if re.search(r'\s+as\s+', key, re.IGNORECASE):
-        (key, alias) = re.split(r'\s+as\s+', key)
+        (key, alias) = re.split(r'\s+as\s+', key, flags=re.IGNORECASE)
         return f"{parse_key(key)} AS {parse_key(alias)}"
 
     # JSON字段支持
