@@ -52,6 +52,11 @@ class Table(TableBase,TableInterface):
         self.cache_expire = 3600
         return self
 
+    def real_table(self,table_name:str)->str:
+        table_name = parse_key(table_name)
+        if '.' not in table_name:
+            table_name = f"{self.schema}.{table_name}"
+        return table_name
 
     def cursor(self) -> Cursor:
         """查询操作,返回cursor对象
@@ -69,7 +74,7 @@ class Table(TableBase,TableInterface):
         group=self.group_by
         order=self.order_by
         limit=self.limit_dict.get("sql", "")
-        sql = f"SELECT {select_fields} FROM {self.schema}.{parse_key(self.table_name)} {join} WHERE {where}{group}{order}{limit}"
+        sql = f"SELECT {select_fields} FROM {self.real_table(self.table_name)} {join} WHERE {where}{group}{order}{limit}"
         params = self.condition_val + self.limit_dict.get("params", ())
 
         self.db_cursor.execute(sql, params)
@@ -454,7 +459,7 @@ class Table(TableBase,TableInterface):
         group=self.group_by
         order=self.order_by
         limit=self.limit_dict.get("sql", "")
-        sql = f"SELECT {fields} FROM {self.schema}.{parse_key(self.table_name)} {join} WHERE {where}{group}{order}{limit}"
+        sql = f"SELECT {fields} FROM {self.real_table(self.table_name)} {join} WHERE {where}{group}{order}{limit}"
         params = self.condition_val + self.limit_dict.get("params", ())
 
         if build_sql:
@@ -524,7 +529,7 @@ class Table(TableBase,TableInterface):
         Returns:
             Table: 链式调用
         """
-        self.table_name = f"{self.schema}.{self.table_name} AS {short_name}"
+        self.table_name = f"{self.table_name} AS {short_name}"
         return self
 
     def join(
@@ -563,7 +568,7 @@ class Table(TableBase,TableInterface):
             if "join" in table_name:
                 return table_name
             if '.' not in table_name:
-                table_name = f"{self.schema}.{table_name}"
+                table_name = self.real_table(table_name)
             table_name = parse_key(table_name)
             as_name = parse_key(as_name)
             on1,on2 = on.split('=')
@@ -617,7 +622,7 @@ class Table(TableBase,TableInterface):
 
         if self.pk and self.pk['name'] in data:
             if self.pk['autoinc']:
-                self.execute(f"SET IDENTITY_INSERT {self.schema}.{parse_key(self.table_name)} ON;")
+                self.execute(f"SET IDENTITY_INSERT {self.real_table(self.table_name)} ON;")
             if replace:
                 exist = self.where(self.pk['name'],data[self.pk['name']]).exists()
                 if exist:
@@ -625,7 +630,7 @@ class Table(TableBase,TableInterface):
 
         inputs = inputs[:-1]
 
-        sql = f"INSERT INTO {self.schema}.{parse_key(self.table_name)} ({keys}) VALUES {inputs};"
+        sql = f"INSERT INTO {self.real_table(self.table_name)} ({keys}) VALUES {inputs};"
         result = self.execute(sql, params)
         return result
 
@@ -644,7 +649,7 @@ class Table(TableBase,TableInterface):
         inputs = ",".join(map(lambda k: f"{parse_key(k)}='%s'", data.keys()))
         params = tuple([parse_value(v) for v in data.values()]) + self.condition_val
         where=self.__condition_str_fix()
-        sql = f"UPDATE {self.schema}.{parse_key(self.table_name)} SET {inputs} WHERE {where};"
+        sql = f"UPDATE {self.real_table(self.table_name)} SET {inputs} WHERE {where};"
         result = self.execute(sql, params)
         return result
 
@@ -663,7 +668,7 @@ class Table(TableBase,TableInterface):
         if not all_record and self.condition_str == "1=1":
             raise ValueError("please set where conditions!")
         where=self.__condition_str_fix()
-        sql = f"DELETE FROM {self.schema}.{parse_key(self.table_name)} WHERE {where};"
+        sql = f"DELETE FROM {self.real_table(self.table_name)} WHERE {where};"
         result = self.execute(sql, self.condition_val)
         return result
 
@@ -685,7 +690,7 @@ class Table(TableBase,TableInterface):
         symbol = "+" if step > 0 else ""
         where=self.__condition_str_fix()
         field = parse_key(field)
-        sql = f"UPDATE {self.schema}.{parse_key(self.table_name)} SET {field} = {field}{symbol}{step} WHERE {where}"
+        sql = f"UPDATE {self.real_table(self.table_name)} SET {field} = {field}{symbol}{step} WHERE {where}"
         result = self.execute(sql, self.condition_val)
         return result
 
@@ -713,7 +718,7 @@ class Table(TableBase,TableInterface):
         """
         where=self.__condition_str_fix()
         field = parse_key(field)
-        sql = f"SELECT MAX({field}) AS _max FROM {self.schema}.{parse_key(self.table_name)} WHERE {where} LIMIT 1"
+        sql = f"SELECT MAX({field}) AS _max FROM {self.real_table(self.table_name)} WHERE {where} LIMIT 1"
         result = self.query(sql, self.condition_val)
 
         if self._fetch_sql:
@@ -742,7 +747,7 @@ class Table(TableBase,TableInterface):
         """
         where=self.__condition_str_fix()
         field = parse_key(field)
-        sql = f"SELECT SUM({field}) AS _sum FROM {self.schema}.{parse_key(self.table_name)} WHERE {where} LIMIT 1"
+        sql = f"SELECT SUM({field}) AS _sum FROM {self.real_table(self.table_name)} WHERE {where} LIMIT 1"
         result = self.query(sql, self.condition_val)
 
         if self._fetch_sql:
@@ -771,7 +776,7 @@ class Table(TableBase,TableInterface):
         """
         where=self.__condition_str_fix()
         field = parse_key(field)
-        sql = f"SELECT AVG({field}) AS _avg FROM {self.schema}.{parse_key(self.table_name)} WHERE {where} LIMIT 1"
+        sql = f"SELECT AVG({field}) AS _avg FROM {self.real_table(self.table_name)} WHERE {where} LIMIT 1"
         result = self.query(sql, self.condition_val)
 
         if self._fetch_sql:
@@ -802,7 +807,7 @@ class Table(TableBase,TableInterface):
         if field == "":
             field = 1
         field = parse_key(field)
-        sql = f"SELECT COUNT({field}) AS _count FROM {self.schema}.{parse_key(self.table_name)} WHERE {where} LIMIT 1"
+        sql = f"SELECT COUNT({field}) AS _count FROM {self.real_table(self.table_name)} WHERE {where} LIMIT 1"
         result = self.query(sql, self.condition_val)
 
         if self._fetch_sql:
@@ -844,7 +849,7 @@ class Table(TableBase,TableInterface):
         group=self.group_by
         order=self.order_by
         limit=self.limit_dict.get("sql", "")
-        sql += f" SELECT {select_fields} FROM {self.schema}.{parse_key(self.table_name)} {join} WHERE {where}{group}{order}{limit}"
+        sql += f" SELECT {select_fields} FROM {self.real_table(self.table_name)} {join} WHERE {where}{group}{order}{limit}"
 
         params = self.condition_val + self.limit_dict.get("params", tuple())
         if isinstance(fields, (list, tuple)):
@@ -860,7 +865,7 @@ class Table(TableBase,TableInterface):
         """
         join=" ".join(self.join_list)
         where=self.__condition_str_fix()
-        sql = f"SELECT 1 FROM {self.schema}.{parse_key(self.table_name)} {join} WHERE {where} LIMIT 1"
+        sql = f"SELECT 1 FROM {self.real_table(self.table_name)} {join} WHERE {where} LIMIT 1"
         result = self.query(sql, self.condition_val)
 
         if not result:

@@ -55,6 +55,8 @@ def parse_value(value:Any)->Any:
     if isinstance(value,str):
         value = value.replace("'", "''")
         return f"{value}"
+    if value is None:
+        return ""
     return value
 
 def parse_where(
