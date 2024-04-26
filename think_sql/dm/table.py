@@ -595,15 +595,16 @@ class Table(TableBase,TableInterface):
         self.table_name = f"({sql1} {symbol} {sql2}) AS t"
         return self
 
-    def insert(self, data: Union[dict, List[dict]], replace: bool = False) -> int:
+    def insert(self, data: Union[dict, List[dict]], replace: bool = False,get_insert_id:bool=False) -> int:
         """插入数据
 
         Args:
             data (dict|List[dict]): 待新增的数据
             replace (bool): 是否使用replace
+            get_insert_id (bool): 是否获取插入id
 
         Returns:
-            int: 影响行数
+            int: 影响行数或插入id
         """
 
         if isinstance(data, dict):
@@ -632,7 +633,10 @@ class Table(TableBase,TableInterface):
 
         sql = f"INSERT INTO {self.real_table(self.table_name)} ({keys}) VALUES {inputs};"
         result = self.execute(sql, params)
-        return result
+        if not get_insert_id:
+            return result
+
+        return self.get_lastid()
 
     def update(self, data: dict, all_record: bool = False) -> int:
         """更新数据
