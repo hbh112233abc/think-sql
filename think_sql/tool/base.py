@@ -26,7 +26,6 @@ class Database:
         """
         self.config = db_config(config)
         self.params = params
-
         self.log = logger
         self.connector = None
         self.cursor = None
@@ -45,6 +44,10 @@ class Database:
             flag (bool, optional): 调试标识. Defaults to True.
         """
         self._debug = flag
+        return self
+
+    def set_logger(self,logger):
+        self.log = logger
         return self
 
     def __enter__(self):
@@ -78,7 +81,7 @@ class TableBase:
         self.db_cursor = db.cursor
         self.table_name = table_name
         self._debug = db._debug
-        self.log = logger
+        self.log = db.logger
         self._fetch_sql = False
         self.use_cache = False
         self.cache_key = None
@@ -95,6 +98,10 @@ class TableBase:
             self: 支持链式调用
         """
         self._debug = flag
+        return self
+
+    def set_logger(self,logger):
+        self.log = logger
         return self
 
     def fetch_sql(self, flag: bool = True):

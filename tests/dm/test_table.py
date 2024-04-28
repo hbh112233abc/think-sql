@@ -281,3 +281,11 @@ def test_table_batch_update(db):
     assert user1["AGE"] == 35
     user2 = table.where("USERNAME", "Alice").find()
     assert user2["AGE"] == 30
+
+def test_get_insert_id(db):
+    table = Table(db, table_name)
+    res = table.insert(test_data,get_insert_id=True)
+    print(res)
+    assert res > 0
+    max_id = table.max("ID")
+    assert res == max_id

@@ -151,9 +151,11 @@ class Table(TableBase,TableInterface):
         """获取最后执行的sql"""
         return self.db_cursor.statement
 
-    def get_lastid(self) -> str:
+    def get_lastid(self) -> int:
         """获取最后作用的id"""
-        return self.db_cursor.lastrowid
+        self.db_cursor.execute('SELECT SCOPE_IDENTITY() as last_id')
+        result = self.db_cursor.fetchone()
+        return result['last_id'] if result else 0
 
     def get_rowcount(self) -> int:
         """获取sql影响条数"""
