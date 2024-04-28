@@ -81,7 +81,7 @@ class TableBase:
         self.db_cursor = db.cursor
         self.table_name = table_name
         self._debug = db._debug
-        self.log = db.logger
+        self.log = db.log
         self._fetch_sql = False
         self.use_cache = False
         self.cache_key = None
