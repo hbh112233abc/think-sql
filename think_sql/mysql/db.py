@@ -104,7 +104,7 @@ class DB(DatabaseInterface,Database):
     def success(self):
         self.connector.commit()
 
-    def table(self, table_name=""):
+    def table(self, table_name="")->Table:
         """生成对应数据表
 
         Args:
