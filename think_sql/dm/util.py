@@ -1,12 +1,13 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-__author__ = 'hbh112233abc@163.com'
+__author__ = "hbh112233abc@163.com"
 
 from decimal import Decimal
 import re
 from typing import Any, Tuple
 
-def parse_key(key, strict:bool=False)->str:
+
+def parse_key(key, strict: bool = False) -> str:
     """加工字段名，处理别名，JSON字段，严格模式检查
 
     Args:
@@ -19,49 +20,49 @@ def parse_key(key, strict:bool=False)->str:
     Returns:
         str: 加工后的字段名
     """
-    if isinstance(key,(int,float,Decimal)):
+    if isinstance(key, (int, float, Decimal)):
         return str(key)
 
     # 去除空白字符
     key = key.strip()
     table = ""
-    if re.search(r'\s+as\s+', key, re.IGNORECASE):
-        (key, alias) = re.split(r'\s+as\s+', key, flags=re.IGNORECASE)
+    if re.search(r"\s+as\s+", key, re.IGNORECASE):
+        (key, alias) = re.split(r"\s+as\s+", key, flags=re.IGNORECASE)
         return f"{parse_key(key)} AS {parse_key(alias)}"
 
     # JSON字段支持
-    if '->' in key and '(' not in key:
+    if "->" in key and "(" not in key:
         # 使用split()方法分割字符串
-        (field, name) = key.split('->')
-        key = f"\"{field}\".\"{name}\""
+        (field, name) = key.split("->")
+        key = f'"{field}"."{name}"'
 
     # 处理表别名
-    elif '.' in key and not re.search(r'[,\'"()[]\s]', key):
-        (table, key) = key.split('.', 1)
+    elif "." in key and not re.search(r"[,\'\"\(\)\]\s]", key):
+        (table, key) = key.split(".", 1)
 
     # 严格模式检查
-    if strict and not re.match(r'^[\w.*]+$', key):
-        raise Exception('not support data:' + key)
+    if strict and not re.match(r"^[\w\.\*]+$", key):
+        raise Exception("not support data:" + key)
 
     # 处理键名
-    if key != '*' and not re.search(r'[,\'"*$$$$$$.\s]', key):
+    if key != "*" and not re.search(r"[,\'\"\*\(\)\[.\s]", key):
         key = f'"{key}"'
     # 构建完整的键名
     if table:
         key = f'"{table}".{key}'
     return key
 
-def parse_value(value:Any)->Any:
-    if isinstance(value,str):
+
+def parse_value(value: Any) -> Any:
+    if isinstance(value, str):
         value = value.replace("'", "''")
         return f"{value}"
     if value is None:
         return ""
     return value
 
-def parse_where(
-    field: str, symbol: str = "", value: Any = None
-) -> Tuple[str, tuple]:
+
+def parse_where(field: str, symbol: str = "", value: Any = None) -> Tuple[str, tuple]:
     """解析where条件语句
 
     Args:
@@ -147,7 +148,7 @@ def parse_where(
     elif symbol == "exp":
         if not isinstance(value, str):
             raise ValueError("exp optional value should be a string")
-        field = f"\"{field}\" {value}"
+        field = f'"{field}" {value}'
         symbol = ""
         check_value = False
     elif symbol == "" and value is None:

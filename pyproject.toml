@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "think-sql"
-version = "0.7.5"
+version = "0.7.6"
 description = "ThinkSQL link think-orm(ThinkPHP)"
 authors = [ "hbh112233abc <hbh112233abc@163.com>",]
 license = "MIT"

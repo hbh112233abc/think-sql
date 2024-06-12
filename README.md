@@ -10,13 +10,13 @@
 - use mysql
 
 ```
-pip install think-sql[mysql]
+pip install think_sql[mysql]
 ```
 
 - use 达梦(DM8)
 
 ```
-pip install think-sql[dm]
+pip install think_sql[dm]
 ```
 
 ## How to use
@@ -31,7 +31,7 @@ pip install think-sql[dm]
 from think_sql import DB
 
 config = {
-    'driver': 'mysql',
+    'type': 'mysql',
     'host': '127.0.0.1',
     'port': 3306,
     'user': 'root',
@@ -62,6 +62,7 @@ with DB("root:'root'@127.0.0.1:3306/test") as db:
 from think_sql import DB
 from think_sql.tool.util import DBConfig
 config = DBConfig(
+  type='mysql',
   host='127.0.0.1',
   port=3306,
   user='root',
@@ -85,6 +86,26 @@ result
 }
 ```
 
+- use `db` function
+
+```python
+from think_sql import db
+
+config = {
+    'type': 'mysql',
+    'host': '127.0.0.1',
+    'port': 3306,
+    'user': 'root',
+    'password': 'root',
+    'database': 'test',
+}
+
+conn = db(config)
+data = conn.table('user').where('id',1).find()
+print(data)
+conn.close()
+```
+
 ### 2. Introduction
 
 #### DB
@@ -94,16 +115,16 @@ result
   init database, return DB instance
 
   - config:Union[str,dict,DBConfig]
-    - str: `user:'password'@host:port/database`
-    - dict: `{'host':'127.0.0.1','port':3306,'user':'root','password':'root','database':'test'}`
-    - DBConfig: `DBConfig(host='127.0.0.1',port=3306,user='root',password='root',database='test')`
+    - str: `type://user:'password'@host:port/database`
+    - dict: `{'type':'mysql','host':'127.0.0.1','port':3306,'user':'root','password':'root','database':'test'}`
+    - DBConfig: `DBConfig(type='mysql',host='127.0.0.1',port=3306,user='root',password='root',database='test')`
   - params:dict pymysql connect other params
 
 - connect()
   connect database use **init** params
 
 - table(table_name):Table
-  return class Table <think_sql.table.Table>
+  return class Table <think_sql.tool.interface.TableInterface>
 
 - check_connected():bool
   check connected, try reconnect database
