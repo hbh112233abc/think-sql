@@ -14,16 +14,12 @@ from pymysql.cursors import Cursor
 from think_sql.tool.util import to_number
 from think_sql.tool.base import Database, TableBase
 from think_sql.tool.interface import TableInterface
-from think_sql.mysql.util import parse_where
+from think_sql.mysql.util import parse_key, parse_where
 
-class Table(TableBase,TableInterface):
-    def __init__(
-        self, db:Database, table_name: str
-    ):
-        super().__init__(
-            db,
-            table_name
-        )
+
+class Table(TableBase, TableInterface):
+    def __init__(self, db: Database, table_name: str):
+        super().__init__(db, table_name)
 
         self.columns = {}
         self.pk = {}
@@ -48,7 +44,6 @@ class Table(TableBase,TableInterface):
         self.cache_expire = 3600
         return self
 
-
     def cursor(self) -> Cursor:
         """查询操作,返回cursor对象
 
@@ -59,9 +54,9 @@ class Table(TableBase,TableInterface):
         Returns:
             cursor: 游标
         """
-        select_fields=",".join(self.select_fields)
-        join=" ".join(self.join_list)
-        limit=self.limit_dict.get("sql", "")
+        select_fields = ",".join(self.select_fields)
+        join = " ".join(self.join_list)
+        limit = self.limit_dict.get("sql", "")
         sql = f"SELECT {select_fields} FROM {self.table_name} {join} WHERE {self.__condition_str_fix()}{self.group_by}{self.order_by}{limit}"
         params = self.condition_val + self.limit_dict.get("params", ())
 
@@ -197,7 +192,6 @@ class Table(TableBase,TableInterface):
         if self._debug:
             self.log.info(f"[sql]({self.connector.db}) {self.db_cursor._executed}")
 
-
     def where(
         self, field: Union[str, list, tuple], symbol: str = "", value: Any = None
     ):
@@ -310,10 +304,11 @@ class Table(TableBase,TableInterface):
         sort = str(sort).strip().upper()
         if sort not in ("ASC", "DESC"):
             raise Exception("sort must be ASC or DESC")
+        field = parse_key(field)
         if not self.order_by:
-            self.order_by = f" ORDER BY `{field}` {sort}"
+            self.order_by = f" ORDER BY {field} {sort}"
         else:
-            self.order_by += f",`{field}` {sort}"
+            self.order_by += f",{field} {sort}"
         return self
 
     def distinct(self, field: str):
@@ -377,9 +372,9 @@ class Table(TableBase,TableInterface):
         if self.distinct_by:
             fields = self.distinct_by
 
-        select_fields=fields
-        join=" ".join(self.join_list)
-        limit=self.limit_dict.get("sql", "")
+        select_fields = fields
+        join = " ".join(self.join_list)
+        limit = self.limit_dict.get("sql", "")
         sql = f"SELECT {select_fields} FROM {self.table_name} {join} WHERE {self.__condition_str_fix()}{self.group_by}{self.order_by}{limit}"
         params = self.condition_val + self.limit_dict.get("params", ())
 
@@ -416,7 +411,7 @@ class Table(TableBase,TableInterface):
         result = self.find()
         return result.get(field, "")
 
-    def column(self, fields: str, key: str = "") -> Union[list,dict]:
+    def column(self, fields: str, key: str = "") -> Union[list, dict]:
         """按列取数据
 
         Args:
@@ -513,7 +508,12 @@ class Table(TableBase,TableInterface):
         self.table_name = f"({sql1} {symbol} {sql2}) AS t"
         return self
 
-    def insert(self, data: Union[dict, List[dict]], replace: bool = False,get_insert_id:bool=False) -> int:
+    def insert(
+        self,
+        data: Union[dict, List[dict]],
+        replace: bool = False,
+        get_insert_id: bool = False,
+    ) -> int:
         """插入数据
 
         Args:
@@ -561,7 +561,9 @@ class Table(TableBase,TableInterface):
             raise ValueError("please set `where` conditions!")
         inputs = ",".join(map(lambda k: k + "=%s", data.keys()))
         params = tuple(data.values()) + self.condition_val
-        sql = f"UPDATE {self.table_name} SET {inputs} WHERE {self.__condition_str_fix()};"
+        sql = (
+            f"UPDATE {self.table_name} SET {inputs} WHERE {self.__condition_str_fix()};"
+        )
         result = self.execute(sql, params)
         return result
 
@@ -582,7 +584,6 @@ class Table(TableBase,TableInterface):
         sql = f"DELETE FROM {self.table_name} WHERE {self.__condition_str_fix()};"
         result = self.execute(sql, self.condition_val)
         return result
-
 
     def inc(self, field: str, step: Union[str, int, float] = 1) -> int:
         """递增
@@ -654,7 +655,7 @@ class Table(TableBase,TableInterface):
         Returns:
             number: 合计
         """
-        sql =f"SELECT SUM(`{field}`) AS sum FROM `{self.table_name}` WHERE {self.__condition_str_fix()} LIMIT 1"
+        sql = f"SELECT SUM(`{field}`) AS sum FROM `{self.table_name}` WHERE {self.__condition_str_fix()} LIMIT 1"
         fetch_sql = self._fetch_sql
         result = self.query(sql, self.condition_val)
 
@@ -764,9 +765,9 @@ class Table(TableBase,TableInterface):
                 ss = ",".join(itertools.repeat("%s", len(fields)))
                 sql += f" ({ss})"
 
-        select_fields=",".join(self.select_fields)
-        join=" ".join(self.join_list)
-        limit=self.limit_dict.get("sql", "")
+        select_fields = ",".join(self.select_fields)
+        join = " ".join(self.join_list)
+        limit = self.limit_dict.get("sql", "")
         sql += f" SELECT {select_fields} FROM {self.table_name} {join} WHERE {self.__condition_str_fix()}{self.group_by}{self.order_by}{limit}"
 
         params = self.condition_val + self.limit_dict.get("params", tuple())
@@ -781,7 +782,7 @@ class Table(TableBase,TableInterface):
         Returns:
             bool: 判断当前查询条件下是否存在数据
         """
-        join=" ".join(self.join_list)
+        join = " ".join(self.join_list)
         sql = f"SELECT 1 FROM {self.table_name} {join} WHERE {self.__condition_str_fix()} LIMIT 1"
         result = self.query(sql, self.condition_val)
 
