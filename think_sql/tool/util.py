@@ -29,12 +29,13 @@ class DBConfig(BaseModel):
         """
         Parse a database configuration string into a dictionary.
 
-        :param cfg: A string in the format "user:'password'@host:port/database"
-        :return: A dictionary with keys 'user', 'password', 'host', 'port', and 'database'
+        :param cfg: A string in the format "type://user:'password'@host:port/database"
+        :return: A dictionary with keys 'type','user', 'password', 'host', 'port', and 'database'
         :raises ValueError: If the input string does not match the expected format
 
         :return
         {
+            "type:"mysql",
             "host":"",
             "port":3306,
             "user":"",
@@ -42,13 +43,15 @@ class DBConfig(BaseModel):
             "database":"",
         }
         """
-        pattern = r"(?P<user>.*?):'(?P<password>.*?)'@(?P<host>.*?):(?P<port>\d+)(/(?P<database>.*))?"
+        pattern = r"((?P<type>.*?)://)?(?P<user>.*?):'(?P<password>.*?)'@(?P<host>.*?):(?P<port>\d+)(/(?P<database>.*))?"
         match = re.match(pattern, dsn)
         if not match:
             raise ValueError(
-                "Invalid db config format, expected `user:'password'@host:port/database`"
+                "Invalid db config format, expected `type://user:'password'@host:port/database`"
             )
         config = match.groupdict()
+        if not config.get('type'):
+            config['type'] = 'mysql'
         dbc = DBConfig.model_validate(config)
         return dbc
 
@@ -62,12 +65,12 @@ def db_config(config:Union[str,dict,DBConfig])->DBConfig:
             """
             Invalid database config
             Right config ex1:
-                DB({"host": "127.0.0.1","port": 3306,"user": "root","password": "password","database": "test"})
+                DB({"type":"mysql","host": "127.0.0.1","port": 3306,"user": "root","password": "password","database": "test"})
             Right config ex2:
-                DB("root:'password'@127.0.0.1:3306/test")
+                DB("mysql://root:'password'@127.0.0.1:3306/test")
             Right config ex3:
                 from think_sql.util import DBConfig
-                cfg = DBConfig(host="127.0.0.1", port=3306, user="root", password="password",database="test")
+                cfg = DBConfig(type="mysql", host="127.0.0.1", port=3306, user="root", password="password",database="test")
                 DB(cfg)
             """
         )
