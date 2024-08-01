@@ -1,20 +1,21 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-__author__ = 'hbh112233abc@163.com'
+__author__ = "hbh112233abc@163.com"
 
 import cacheout
 from loguru import logger
 from typing import Any, Union
 
-from think_sql.tool.util import DBConfig,db_config
+from think_sql.tool.util import DBConfig, db_config
 
 from think_sql.tool.cache import CacheStorage
+
 
 class Database:
     def __init__(
         self,
         config: Union[str, dict, DBConfig],
-        params:dict={},
+        params: dict = {},
         debug: bool = False,
     ):
         """实例化数据库连接
@@ -25,6 +26,7 @@ class Database:
             debug: bool 调试模式
         """
         self.config = db_config(config)
+        self.database = self.config.database
         self.params = params
         self.log = logger
         self.connector = None
@@ -46,7 +48,7 @@ class Database:
         self._debug = flag
         return self
 
-    def set_logger(self,logger):
+    def set_logger(self, logger):
         self.log = logger
         return self
 
@@ -73,9 +75,7 @@ class Database:
 
 
 class TableBase:
-    def __init__(
-        self, db:Database, table_name: str
-    ):
+    def __init__(self, db: Database, table_name: str):
         self.db = db
         self.connector = db.connector
         self.db_cursor = db.cursor
@@ -100,7 +100,7 @@ class TableBase:
         self._debug = flag
         return self
 
-    def set_logger(self,logger):
+    def set_logger(self, logger):
         self.log = logger
         return self
 
@@ -137,7 +137,7 @@ class TableBase:
         self.cache_expire = expire
         return self
 
-    def get_cache(self, key:str="")->Any:
+    def get_cache(self, key: str = "") -> Any:
         if not self.use_cache:
             return None
         if not key:
@@ -146,7 +146,7 @@ class TableBase:
             return None
         return self.cache_storage.get(key)
 
-    def set_cache(self, value:Any, key:str=""):
+    def set_cache(self, value: Any, key: str = ""):
         if not self.cache_key:
             return
         if not key:
