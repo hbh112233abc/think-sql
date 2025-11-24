@@ -50,7 +50,7 @@ with DB(config) as db:
 ```python
 from think_sql import DB
 
-with DB("root:'root'@127.0.0.1:3306/test") as db:
+with DB("mysql://root:'root'@127.0.0.1:3306/test") as db:
     data = db.table('user').where('id',1).find()
     print(data)
 
@@ -573,6 +573,21 @@ WHERE finished_count > 0
     "after": ""
   }
   ```
+
+#### diff for mysql
+
+比较两个mysql实例的差异并生成`update.sql`
+
+```shell
+python -m think_sql.mysql.diff --type mysql --src "root:'root'@127.0.0.1:3306/db1" --dst "root:'xmhymake'@192.168.102.154:3306/db2"
+```
+
+|参数|必须|说明|
+|-|-|-|
+|type|Y|数据库类型: mysql oceanbase polardb|
+|src|Y|源服务器(格式: "<user>:<password>@<host>:<port>/<database>")|
+|dst|Y|目标服务器(格式: "<user>:<password>@<host>:<port>/<database>")|
+|save|N|是否生成更新SQL,默认:True,差异更新SQL保存为logs/update.sql|
 
 ## Development
 

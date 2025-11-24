@@ -160,6 +160,8 @@ class Table(TableBase, TableInterface):
             self.log.error(params)
             raise e
         finally:
+            if self.db.auto_commit:
+                self.connector.commit()
             self.init()
 
     def execute(self, sql: str, params: list = []) -> int:

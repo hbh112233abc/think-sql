@@ -14,17 +14,12 @@ from think_sql.tool.base import Database, TableBase
 from think_sql.tool.interface import TableInterface
 
 from think_sql.tool.util import to_number
-from think_sql.dm.util import parse_key, parse_value,parse_where
+from think_sql.dm.util import parse_key, parse_value, parse_where
 
 
-class Table(TableBase,TableInterface):
-    def __init__(
-        self, db:Database, table_name: str
-    ):
-        super().__init__(
-            db,
-            table_name
-        )
+class Table(TableBase, TableInterface):
+    def __init__(self, db: Database, table_name: str):
+        super().__init__(db, table_name)
 
         self.schema = self.db.config.database.upper()
 
@@ -52,9 +47,9 @@ class Table(TableBase,TableInterface):
         self.cache_expire = 3600
         return self
 
-    def real_table(self,table_name:str)->str:
+    def real_table(self, table_name: str) -> str:
         table_name = parse_key(table_name)
-        if '.' not in table_name:
+        if "." not in table_name:
             table_name = f"{self.schema}.{table_name}"
         return table_name
 
@@ -68,12 +63,12 @@ class Table(TableBase,TableInterface):
         Returns:
             cursor: 游标
         """
-        select_fields=self.__select_fields_str()
-        join=" ".join(self.join_list)
-        where=self.__condition_str_fix()
-        group=self.group_by
-        order=self.order_by
-        limit=self.limit_dict.get("sql", "")
+        select_fields = self.__select_fields_str()
+        join = " ".join(self.join_list)
+        where = self.__condition_str_fix()
+        group = self.group_by
+        order = self.order_by
+        limit = self.limit_dict.get("sql", "")
         sql = f"SELECT {select_fields} FROM {self.real_table(self.table_name)} {join} WHERE {where}{group}{order}{limit}"
         params = self.condition_val + self.limit_dict.get("params", ())
 
@@ -131,19 +126,19 @@ class Table(TableBase,TableInterface):
         self.db_cursor.execute(sql)
         data = self.db_cursor.fetchall()
         fields = []
-        fields = tuple([d['column_name'] for d in data])
+        fields = tuple([d["column_name"] for d in data])
         self.columns = {}
         for d in data:
             field = {
-                "name": d['column_name'],
-                "type": d['data_type'],
-                "notnull": d['notnull'],
-                "default": d['data_default'],
-                "primary": d['pk'],
-                "autoinc": d['autoinc'],
+                "name": d["column_name"],
+                "type": d["data_type"],
+                "notnull": d["notnull"],
+                "default": d["data_default"],
+                "primary": d["pk"],
+                "autoinc": d["autoinc"],
             }
-            self.columns[field['name']] = field
-            if field['primary'] == 1:
+            self.columns[field["name"]] = field
+            if field["primary"] == 1:
                 self.pk = field
         return fields
 
@@ -153,15 +148,15 @@ class Table(TableBase,TableInterface):
 
     def get_lastid(self) -> int:
         """获取最后作用的id"""
-        self.db_cursor.execute('SELECT SCOPE_IDENTITY() as last_id')
+        self.db_cursor.execute("SELECT SCOPE_IDENTITY() as last_id")
         result = self.db_cursor.fetchone()
-        return result['last_id'] if result else 0
+        return result["last_id"] if result else 0
 
     def get_rowcount(self) -> int:
         """获取sql影响条数"""
         return self.db_cursor.rowcount
 
-    def fetch_sql(self,flag:bool=True):
+    def fetch_sql(self, flag: bool = True):
         """设置获取sql语句标识
 
         Args:
@@ -169,7 +164,6 @@ class Table(TableBase,TableInterface):
         """
         self._fetch_sql = flag
         return self
-
 
     def build_sql(self, operation: str, params: list = []) -> str:
         """生成sql语句
@@ -232,6 +226,8 @@ class Table(TableBase,TableInterface):
                 self.log.error(sql, params)
             raise e
         finally:
+            if self.db.auto_commit:
+                self.connector.commit()
             self.init()
 
     def execute(self, sql: str, params: list = []) -> int:
@@ -245,7 +241,7 @@ class Table(TableBase,TableInterface):
             int: 影响行数
         """
         try:
-            finally_sql = ''
+            finally_sql = ""
             finally_sql = self.build_sql(sql, params)
             if self._fetch_sql:
                 return finally_sql
@@ -439,7 +435,7 @@ class Table(TableBase,TableInterface):
         self.select_fields = fields
         return self
 
-    def __select_fields_str(self)->str:
+    def __select_fields_str(self) -> str:
         """获取select字段字符串
 
         Returns:
@@ -456,11 +452,11 @@ class Table(TableBase,TableInterface):
         fields = self.__select_fields_str()
         if self.distinct_by:
             fields = self.distinct_by
-        join=" ".join(self.join_list)
-        where=self.__condition_str_fix()
-        group=self.group_by
-        order=self.order_by
-        limit=self.limit_dict.get("sql", "")
+        join = " ".join(self.join_list)
+        where = self.__condition_str_fix()
+        group = self.group_by
+        order = self.order_by
+        limit = self.limit_dict.get("sql", "")
         sql = f"SELECT {fields} FROM {self.real_table(self.table_name)} {join} WHERE {where}{group}{order}{limit}"
         params = self.condition_val + self.limit_dict.get("params", ())
 
@@ -495,7 +491,7 @@ class Table(TableBase,TableInterface):
         result = self.find()
         return result.get(field, "")
 
-    def column(self, fields: str, key: str = "") -> Union[list,dict]:
+    def column(self, fields: str, key: str = "") -> Union[list, dict]:
         """按列取数据
 
         Args:
@@ -562,18 +558,16 @@ class Table(TableBase,TableInterface):
 
         join = join.upper()
         if join not in ("INNER", "LEFT", "RIGHT", "FULL OUTER"):
-            raise ValueError(
-                "join type must in ('INNER','LEFT','RIGHT','FULL OUTER')"
-            )
+            raise ValueError("join type must in ('INNER','LEFT','RIGHT','FULL OUTER')")
 
         def make_join_str(table_name, as_name, on, join, and_str):
             if "join" in table_name:
                 return table_name
-            if '.' not in table_name:
+            if "." not in table_name:
                 table_name = self.real_table(table_name)
             table_name = parse_key(table_name)
             as_name = parse_key(as_name)
-            on1,on2 = on.split('=')
+            on1, on2 = on.split("=")
             on = f"{parse_key(on1)} = {parse_key(on2)}"
             join_str = f"{join} JOIN {table_name} AS {as_name} ON {on}"
             if and_str:
@@ -597,7 +591,12 @@ class Table(TableBase,TableInterface):
         self.table_name = f"({sql1} {symbol} {sql2}) AS t"
         return self
 
-    def insert(self, data: Union[dict, List[dict]], replace: bool = False,get_insert_id:bool=False) -> int:
+    def insert(
+        self,
+        data: Union[dict, List[dict]],
+        replace: bool = False,
+        get_insert_id: bool = False,
+    ) -> int:
         """插入数据
 
         Args:
@@ -623,17 +622,23 @@ class Table(TableBase,TableInterface):
         else:
             raise TypeError("data must be dict or List[dict]")
 
-        if self.pk and self.pk['name'] in data:
-            if self.pk['autoinc']:
-                self.execute(f"SET IDENTITY_INSERT {self.real_table(self.table_name)} ON;")
+        if self.pk and self.pk["name"] in data:
+            if self.pk["autoinc"]:
+                self.execute(
+                    f"SET IDENTITY_INSERT {self.real_table(self.table_name)} ON;"
+                )
             if replace:
-                exist = self.where(self.pk['name'],data[self.pk['name']]).exists()
+                exist = self.where(self.pk["name"], data[self.pk["name"]]).exists()
                 if exist:
-                    return self.where(self.pk['name'],data[self.pk['name']]).update(data)
+                    return self.where(self.pk["name"], data[self.pk["name"]]).update(
+                        data
+                    )
 
         inputs = inputs[:-1]
 
-        sql = f"INSERT INTO {self.real_table(self.table_name)} ({keys}) VALUES {inputs};"
+        sql = (
+            f"INSERT INTO {self.real_table(self.table_name)} ({keys}) VALUES {inputs};"
+        )
         result = self.execute(sql, params)
         if not get_insert_id:
             return result
@@ -654,7 +659,7 @@ class Table(TableBase,TableInterface):
             raise ValueError("please set where conditions!")
         inputs = ",".join(map(lambda k: f"{parse_key(k)}='%s'", data.keys()))
         params = tuple([parse_value(v) for v in data.values()]) + self.condition_val
-        where=self.__condition_str_fix()
+        where = self.__condition_str_fix()
         sql = f"UPDATE {self.real_table(self.table_name)} SET {inputs} WHERE {where};"
         result = self.execute(sql, params)
         return result
@@ -673,11 +678,10 @@ class Table(TableBase,TableInterface):
         """
         if not all_record and self.condition_str == "1=1":
             raise ValueError("please set where conditions!")
-        where=self.__condition_str_fix()
+        where = self.__condition_str_fix()
         sql = f"DELETE FROM {self.real_table(self.table_name)} WHERE {where};"
         result = self.execute(sql, self.condition_val)
         return result
-
 
     def inc(self, field: str, step: Union[str, int, float] = 1) -> int:
         """递增
@@ -694,7 +698,7 @@ class Table(TableBase,TableInterface):
         if self.condition_str == "1=1":
             raise ValueError("please set where conditions!")
         symbol = "+" if step > 0 else ""
-        where=self.__condition_str_fix()
+        where = self.__condition_str_fix()
         field = parse_key(field)
         sql = f"UPDATE {self.real_table(self.table_name)} SET {field} = {field}{symbol}{step} WHERE {where}"
         result = self.execute(sql, self.condition_val)
@@ -722,7 +726,7 @@ class Table(TableBase,TableInterface):
         Returns:
             number: 最大值
         """
-        where=self.__condition_str_fix()
+        where = self.__condition_str_fix()
         field = parse_key(field)
         sql = f"SELECT MAX({field}) AS _max FROM {self.real_table(self.table_name)} WHERE {where} LIMIT 1"
         result = self.query(sql, self.condition_val)
@@ -751,7 +755,7 @@ class Table(TableBase,TableInterface):
         Returns:
             number: 合计
         """
-        where=self.__condition_str_fix()
+        where = self.__condition_str_fix()
         field = parse_key(field)
         sql = f"SELECT SUM({field}) AS _sum FROM {self.real_table(self.table_name)} WHERE {where} LIMIT 1"
         result = self.query(sql, self.condition_val)
@@ -780,7 +784,7 @@ class Table(TableBase,TableInterface):
         Returns:
             number: 平均值
         """
-        where=self.__condition_str_fix()
+        where = self.__condition_str_fix()
         field = parse_key(field)
         sql = f"SELECT AVG({field}) AS _avg FROM {self.real_table(self.table_name)} WHERE {where} LIMIT 1"
         result = self.query(sql, self.condition_val)
@@ -809,7 +813,7 @@ class Table(TableBase,TableInterface):
         Returns:
             int: 行数量
         """
-        where=self.__condition_str_fix()
+        where = self.__condition_str_fix()
         if field == "":
             field = 1
         field = parse_key(field)
@@ -822,7 +826,6 @@ class Table(TableBase,TableInterface):
         if not result:
             return 0
         return result[0]["_count"] or 0
-
 
     def insert_to(self, new_table: str, fields: Union[str, list, tuple] = None) -> int:
         """复制表 INSERT INTO
@@ -849,12 +852,12 @@ class Table(TableBase,TableInterface):
             if len(self.select_fields) != len(fields):
                 raise ValueError("fields count not match select_fields count")
 
-        select_fields=self.__select_fields_str()
-        join=" ".join(self.join_list)
-        where=self.__condition_str_fix()
-        group=self.group_by
-        order=self.order_by
-        limit=self.limit_dict.get("sql", "")
+        select_fields = self.__select_fields_str()
+        join = " ".join(self.join_list)
+        where = self.__condition_str_fix()
+        group = self.group_by
+        order = self.order_by
+        limit = self.limit_dict.get("sql", "")
         sql += f" SELECT {select_fields} FROM {self.real_table(self.table_name)} {join} WHERE {where}{group}{order}{limit}"
 
         params = self.condition_val + self.limit_dict.get("params", tuple())
@@ -869,8 +872,8 @@ class Table(TableBase,TableInterface):
         Returns:
             bool: 判断当前查询条件下是否存在数据
         """
-        join=" ".join(self.join_list)
-        where=self.__condition_str_fix()
+        join = " ".join(self.join_list)
+        where = self.__condition_str_fix()
         sql = f"SELECT 1 FROM {self.real_table(self.table_name)} {join} WHERE {where} LIMIT 1"
         result = self.query(sql, self.condition_val)
 

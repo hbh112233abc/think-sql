@@ -7,5 +7,6 @@ dist/
 tests/__pycache__/
 think_sql/__pycache__/
 logs/
+log/
 tests/logs/
 __pycache__/
